@@ -14,4 +14,5 @@ export const dialogueData = {
     Text is rendered with HTML/CSS. So the textbox you're currently reading is not rendered within canvas.`,
   library: `There are a lot of programming books on my shelves.`,
   exit: `If you want to exit  room, just close the tab.`,
+  chair: `pewdiepie gaming chair`,
 };
