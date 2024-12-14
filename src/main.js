@@ -181,14 +181,14 @@ const roomData = {
   main: {
     name: "main",
     sprite: "mainroom",
-    json: "./mainroom.json",
-    playerEntry: k.vec2(100, 200),
+    jjson: "./mainroom.json",
+    // playerEntry: k.vec2(100, 200),
   },
   map: {
     name: "map",
     sprite: "maproom",
-    json: "./map.json",
-    playerEntry: k.vec2(50, 50),
+    jjson: "./map.json",
+    // playerEntry: k.vec2(50, 50),
   },
 };
 
@@ -197,7 +197,7 @@ k.setBackground(k.Color.fromHex("#311047"));
 function loadRoom(roomName) {
   k.scene(roomName, async () => {
     const room = roomData[roomName];
-    const mapData = await (await fetch(room.json)).json();
+    const mapData = await (await fetch(room.jjson)).json();
     const layers = mapData.layers;
 
     // Add room background
@@ -210,7 +210,7 @@ function loadRoom(roomName) {
       k.body(),
       k.anchor("center"),
       // k.pos(room.playerEntry),
-      k.pos,
+      k.pos(),
       k.scale(scaleFactor),
       {
         speed: 250,
@@ -225,10 +225,17 @@ function loadRoom(roomName) {
         for (const boundary of layer.objects) {
           k.add([
             k.area({
-              shape: new k.Rect(k.vec2(0), boundary.width, boundary.height),
+              shape: new k.Rect(
+                k.vec2(0),
+                boundary.width * scaleFactor, // Scale boundary width
+                boundary.height * scaleFactor // Scale boundary height
+              ),
             }),
             k.body({ isStatic: true }),
-            k.pos(boundary.x, boundary.y),
+            k.pos(
+              boundary.x * scaleFactor, // Scale boundary x-position
+              boundary.y * scaleFactor // Scale boundary y-position
+            ),
             boundary.name,
           ]);
 
@@ -319,6 +326,7 @@ function loadRoom(roomName) {
       //movement
       const worldMousePos = k.toWorld(k.mousePos());
       player.moveTo(worldMousePos, player.speed);
+      console.log("Moving to:", worldMousePos, "with speed:", player.speed); //for debugging
 
       const mouseAngle = player.pos.angle(worldMousePos);
 

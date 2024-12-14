@@ -167,7 +167,7 @@
                 {
                  "height":17,
                  "id":12,
-                 "name":"entry",
+                 "name":"exit",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -178,7 +178,7 @@
                 {
                  "height":16.25,
                  "id":13,
-                 "name":"entry",
+                 "name":"exit",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -189,7 +189,7 @@
                 {
                  "height":17.5,
                  "id":14,
-                 "name":"entry",
+                 "name":"exit",
                  "rotation":0,
                  "type":"",
                  "visible":true,
