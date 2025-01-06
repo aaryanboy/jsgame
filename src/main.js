@@ -14,7 +14,7 @@ k.loadSprite("spritesheet", "./spritesheet.png", {
     "idle-up": 1014,
     "walk-up": { from: 1014, to: 1017, loop: true, speed: 8 },
 
-    "attack-up": { from: 1014, to: 1017, loop: false, speed: 8 },
+    "attack-up": { from: 1014, to: 1017, loop: false, speed: 7 },
 
     "attack-down": { from: 936, to: 939, loop: false, speed: 8 },
 
@@ -204,6 +204,45 @@ function loadRoom(roomName) {
       }
 
       player.play("idle-side");
+    });
+
+    k.onKeyPress("space", () => {
+      // Check the direction and play the corresponding attack animation
+      switch (player.direction) {
+        case "up":
+          player.play("attack-up");
+          break;
+        case "down":
+          player.play("attack-down");
+          break;
+        case "left":
+          player.play("attack-left");
+          break;
+        case "right":
+          player.play("attack-right");
+          break;
+        default:
+          console.log("Invalid direction for attack animation");
+          break;
+      }
+
+      // Optionally, you can set a timeout to return to the idle state after the animation finishes
+      const animationDuration = 0.5; // Replace with the actual duration of your attack animation in seconds
+      k.wait(animationDuration, () => {
+        // Return to the idle animation based on direction
+        switch (player.direction) {
+          case "up":
+            player.play("idle-up");
+            break;
+          case "down":
+            player.play("idle-down");
+            break;
+          case "left":
+          case "right":
+            player.play("idle-side");
+            break;
+        }
+      });
     });
   });
 }
