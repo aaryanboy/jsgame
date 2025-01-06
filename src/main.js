@@ -18,6 +18,7 @@ k.loadSprite("spritesheet", "./spritesheet.png", {
 
 k.loadSprite("mainroom", "./mainroom.png");
 k.loadSprite("maproom", "./map.png");
+k.loadSprite("maparea", "./maparea.png");
 
 const roomData = {
   main: {
@@ -26,11 +27,17 @@ const roomData = {
     jjson: "./mainroom.json",
     // playerEntry: k.vec2(100, 200),
   },
-  map: {
+  area: {
     name: "map",
     sprite: "maproom",
     jjson: "./map.json",
     // playerEntry: k.vec2(50, 50),
+  },
+  map: {
+    name: "area",
+    sprite: "maparea",
+    jjson: "./maparea.json",
+    // playerEntry: k.vec2(100, 200),
   },
 };
 
