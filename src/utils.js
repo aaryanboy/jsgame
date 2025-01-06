@@ -26,6 +26,7 @@ export function displayDialogue(text, onDisplayEnd) {
     clearInterval(intervalRef);
     closeBtn.removeEventListener("click", onCloseBtnClick);
   }
+// skill ossue
 
   closeBtn.addEventListener("click", onCloseBtnClick);
 
