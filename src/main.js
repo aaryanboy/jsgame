@@ -297,6 +297,7 @@ function loadRoom(roomName) {
         k.pos(player.pos.add(attackOffset)), // Position relative to the player
         k.anchor("center"),
         k.scale(scaleFactor),
+        { z: 6 },
         "attack",
       ]);
 
