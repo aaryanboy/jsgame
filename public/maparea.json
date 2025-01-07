@@ -457,7 +457,7 @@
                 {
                  "height":3.75,
                  "id":34,
-                 "name":"exit",
+                 "name":"exit_to_main",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -1169,7 +1169,7 @@
          "y":0
         }],
  "nextlayerid":9,
- "nextobjectid":146,
+ "nextobjectid":147,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.0",
