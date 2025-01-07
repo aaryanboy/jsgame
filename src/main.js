@@ -13,12 +13,6 @@ k.loadSprite("spritesheet", "./spritesheet.png", {
     "walk-side": { from: 975, to: 978, loop: true, speed: 8 },
     "idle-up": 1014,
     "walk-up": { from: 1014, to: 1017, loop: true, speed: 8 },
-
-    // "attack-up": { from: 1087, to: 1091, loop: false, speed: 15 },
-
-    // "attack-down": { from: 1126, to: 1130, loop: false, speed: 15 },
-
-    // "attack-side": { from: 1009, to: 1013, loop: false, speed: 15 },
   },
 });
 k.loadSprite("attack", "./spritesheet.png", {
@@ -39,6 +33,7 @@ k.loadSprite("mainroom", "./mainroom.png");
 k.loadSprite("maproom", "./map.png");
 k.loadSprite("maparea", "./maparea.png");
 k.loadSprite("bossroom", "./bossroom.png");
+k.loadSprite("tree", "./trees.png"); // Tree foreground
 
 const roomData = {
   main: {
@@ -82,7 +77,12 @@ function loadRoom(roomName) {
     const layers = mapData.layers;
 
     // Add room background
-    const map = k.add([k.sprite(room.sprite), k.pos(0), k.scale(scaleFactor)]);
+    const map = k.add([
+      k.sprite(room.sprite),
+      k.pos(0),
+      k.scale(scaleFactor),
+      { z: 0 },
+    ]);
 
     // Add player
     const player = k.make([
@@ -93,6 +93,7 @@ function loadRoom(roomName) {
       // k.pos(room.playerEntry),
       k.pos(),
       k.scale(scaleFactor),
+      { z: 2 },
       {
         speed: 250,
         direction: "down",
@@ -100,6 +101,15 @@ function loadRoom(roomName) {
       },
       "player",
     ]);
+
+    if (roomName === "area") {
+      k.add([
+        k.sprite("tree"),
+        k.pos(0), // Position of the tree
+        k.scale(scaleFactor),
+        { z: 4 },
+      ]);
+    }
 
     for (const layer of layers) {
       if (layer.name === "boundaries") {
@@ -147,11 +157,19 @@ function loadRoom(roomName) {
 
           if (boundary.name) {
             player.onCollide(boundary.name, () => {
-              player.isInDialogue = true;
-              displayDialogue(
-                dialogueData[boundary.name],
-                () => (player.isInDialogue = false)
-              );
+              if (dialogueData[boundary.name]) {
+                // Dialogue data exists for this boundary
+                player.isInDialogue = true;
+                displayDialogue(
+                  dialogueData[boundary.name],
+                  () => (player.isInDialogue = false)
+                );
+              } else {
+                // No dialogue data available
+                console.log(
+                  `No dialogue available for boundary: ${boundary.name}`
+                );
+              }
             });
           }
         }

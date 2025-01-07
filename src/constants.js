@@ -13,8 +13,6 @@ export const dialogueData = {
   projects: `Info about this portfolio : It's made with the Kaboom.js library which is a library for making games in JavaScript.
     Text is rendered with HTML/CSS. So the textbox you're currently reading is not rendered within canvas.`,
   library: `There are a lot of programming books on my shelves.`,
-  exit: `If you want to exit  room, just close the tab.`,
-  exit1: `same room.`,
-  exit3: `same room here too`,
+
   chair: `pewdiepie gaming chair`,
 };
