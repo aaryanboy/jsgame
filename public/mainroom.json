@@ -178,7 +178,7 @@
                 {
                  "height":16.25,
                  "id":13,
-                 "name":"exit",
+                 "name":"exit_to_map",
                  "rotation":0,
                  "type":"",
                  "visible":true,
@@ -200,7 +200,7 @@
                 {
                  "height":16.3863636363636,
                  "id":15,
-                 "name":"exit2",
+                 "name":"exit_to_area",
                  "rotation":0,
                  "type":"",
                  "visible":true,

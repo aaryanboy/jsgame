@@ -14,17 +14,31 @@ k.loadSprite("spritesheet", "./spritesheet.png", {
     "idle-up": 1014,
     "walk-up": { from: 1014, to: 1017, loop: true, speed: 8 },
 
+    // "attack-up": { from: 1087, to: 1091, loop: false, speed: 15 },
+
+    // "attack-down": { from: 1126, to: 1130, loop: false, speed: 15 },
+
+    // "attack-side": { from: 1009, to: 1013, loop: false, speed: 15 },
+  },
+});
+k.loadSprite("attack", "./spritesheet.png", {
+  sliceX: 39,
+  sliceY: 31,
+  anims: {
     "attack-up": { from: 1087, to: 1091, loop: false, speed: 15 },
 
     "attack-down": { from: 1126, to: 1130, loop: false, speed: 15 },
 
-    "attack-side": { from: 1009, to: 1013, loop: false, speed: 15 },
+    "attack-left": { from: 1009, to: 1013, loop: false, speed: 15 },
+
+    "attack-right": { from: 1126, to: 1130, loop: false, speed: 15 },
   },
 });
 
 k.loadSprite("mainroom", "./mainroom.png");
 k.loadSprite("maproom", "./map.png");
 k.loadSprite("maparea", "./maparea.png");
+k.loadSprite("bossroom", "./bossroom.png");
 
 const roomData = {
   main: {
@@ -33,19 +47,31 @@ const roomData = {
     jjson: "./mainroom.json",
     // playerEntry: k.vec2(100, 200),
   },
-  area: {
+  map: {
     name: "map",
     sprite: "maproom",
     jjson: "./map.json",
     // playerEntry: k.vec2(50, 50),
   },
-  map: {
+  area: {
     name: "area",
     sprite: "maparea",
     jjson: "./maparea.json",
     // playerEntry: k.vec2(100, 200),
   },
+  boss: {
+    name: "boss",
+    sprite: "bossroom",
+    jjson: "./bossroom.json",
+    // playerEntry: k.vec2(100, 200),
+  },
 };
+
+// Load all rooms
+loadRoom("main");
+loadRoom("map");
+loadRoom("area");
+loadRoom("boss");
 
 k.setBackground(k.Color.fromHex("#311047"));
 
@@ -94,19 +120,28 @@ function loadRoom(roomName) {
             boundary.name,
           ]);
 
-          if (
-            boundary.name === "exit" ||
-            boundary.name === "exit1" ||
-            boundary.name === "exit3"
-          ) {
+          if (boundary.name === "exit_to_map") {
             player.onCollide(boundary.name, () => {
-              // Destroy all objects in the current scene
               k.destroyAll();
-
-              // Transition to another room
-              const nextRoom = roomName === "main" ? "map" : "main";
-              roomData[nextRoom].playerEntry = boundary.spawnpoints; // Example
-              k.go(nextRoom);
+              k.go("map"); // Transition to the map room
+            });
+          }
+          if (boundary.name === "exit_to_area") {
+            player.onCollide(boundary.name, () => {
+              k.destroyAll();
+              k.go("area"); // Transition to the area room
+            });
+          }
+          if (boundary.name === "exit_to_boss") {
+            player.onCollide(boundary.name, () => {
+              k.destroyAll();
+              k.go("boss"); // Transition to the boss room
+            });
+          }
+          if (boundary.name === "exit_to_main") {
+            player.onCollide(boundary.name, () => {
+              k.destroyAll();
+              k.go("main"); // Transition to the main room
             });
           }
 
@@ -204,74 +239,58 @@ function loadRoom(roomName) {
       player.play("idle-side");
     });
 
+    let lastAttackSide = 1; // Track the last side attack animation used
+
     k.onKeyPress("space", () => {
-      // Check the direction and play the corresponding attack animation
+      if (player.isInDialogue) return; // Prevent attacks during dialogue
+
+      // Determine the position and direction of the attack sprite
+      let attackOffset = k.vec2(0, 0);
+      let attackAnim = "";
+      let flipX = false;
+
       switch (player.direction) {
         case "up":
-          player.play("attack-up");
+          attackOffset = k.vec2(0, -16); // Place above the player
+          attackAnim = "attack-up";
           break;
         case "down":
-          player.play("attack-down");
+          attackOffset = k.vec2(0, 16); // Place below the player
+          attackAnim = "attack-down";
           break;
         case "left":
-          player.flipX = true;
-          player.play("attack-side");
+          attackOffset = k.vec2(-36, 0); // Place to the left
+          attackAnim = lastAttackSide === 1 ? "attack-left" : "attack-right";
+          flipX = true; // Flip the attack sprite for left direction
+          lastAttackSide = lastAttackSide === 1 ? 2 : 1; // Toggle side
           break;
         case "right":
-          player.flipX = false;
-          player.play("attack-side");
-          break;
-        default:
-          console.log("Invalid direction for attack animation");
+          attackOffset = k.vec2(36, 0); // Place to the right
+          // Alternate between side1 and side2
+          attackAnim = lastAttackSide === 1 ? "attack-left" : "attack-right";
+          flipX = false; // No flip for right direction
+          lastAttackSide = lastAttackSide === 1 ? 2 : 1; // Toggle side
           break;
       }
 
-      // Function to trigger attack  how to empliment this with the charater so both are present at same tinme
+      // Create the attack sprite
+      const attackSprite = k.add([
+        k.sprite("attack", { anim: attackAnim }),
+        k.pos(player.pos.add(attackOffset)), // Position relative to the player
+        k.anchor("center"),
+        k.scale(scaleFactor),
+        "attack",
+      ]);
 
-      // function triggerAttack() {
+      attackSprite.flipX = flipX;
 
-      //   // Determine the offset and animation based on direction
-      //   let offset = k.vec2(0, 0);
-      //   let attackAnim = "";
-
-      //   switch (player.direction) {
-      //     case "up":
-      //       offset = k.vec2(0, -16); // Above the player
-      //       attackAnim = "attack-up";
-      //       break;
-      //     case "down":
-      //       offset = k.vec2(0, 16); // Below the player
-      //       attackAnim = "attack-down";
-      //       break;
-      //     case "left":
-      //       offset = k.vec2(-16, 0); // To the left
-      //       attackAnim = "attack-side";
-      //       player.flipX = true; // Flip sprite for left direction
-      //       break;
-      //     case "right":
-      //       offset = k.vec2(16, 0); // To the right
-      //       attackAnim = "attack-side";
-      //       player.flipX = false; // Ensure sprite faces right
-      //       break;
-      //   }
-
-      // Optionally, you can set a timeout to return to the idle state after the animation finishes
-      const animationDuration = 0.5; // Replace with the actual duration of your attack animation in seconds
+      // Remove the attack sprite after the animation duration
+      const animationDuration = 0.5; // Adjust based on the sprite animation length
       k.wait(animationDuration, () => {
-        // Return to the idle animation based on direction
-        switch (player.direction) {
-          case "up":
-            player.play("idle-up");
-            break;
-          case "down":
-            player.play("idle-down");
-            break;
-          case "left":
-          case "right":
-            player.play("idle-side");
-            break;
-        }
+        k.destroy(attackSprite);
       });
+
+      // (Optional) Add collision logic or other attack effects
     });
   });
 }

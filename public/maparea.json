@@ -1126,6 +1126,18 @@
                  "width":1.45454545454544,
                  "x":366.727272727273,
                  "y":-0.545454545454547
+                },
+            
+                {
+                 "height":4,
+                 "id":144,
+                 "name":"exit_to_boss",
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":10.5,
+                 "x":322.5,
+                 "y":40.5
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -1149,17 +1161,6 @@
                  "width":0,
                  "x":39.375,
                  "y":231.75
-                }, 
-                {
-                 "height":4,
-                 "id":142,
-                 "name":"bossbattle",
-                 "rotation":0,
-                 "type":"",
-                 "visible":true,
-                 "width":5.81818181818181,
-                 "x":325.090909090909,
-                 "y":39.8181818181818
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -1168,7 +1169,7 @@
          "y":0
         }],
  "nextlayerid":9,
- "nextobjectid":144,
+ "nextobjectid":146,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.0",
