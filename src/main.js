@@ -29,6 +29,19 @@ k.loadSprite("attack", "./spritesheet.png", {
   },
 });
 
+k.loadSprite("boss", "./spritesheet.png", {
+  sliceX: 39,
+  sliceY: 31,
+  anims: {
+    "idle-down": 862,
+    "walk-down": { from: 862, to: 863, loop: true, speed: 8 },
+    "idle-side": 864,
+    "walk-side": { from: 864, to: 865, loop: true, speed: 8 },
+    "idle-up": 901,
+    "walk-up": { from: 901, to: 902, loop: true, speed: 8 },
+  },
+});
+
 k.loadSprite("mainroom", "./mainroom.png");
 k.loadSprite("maproom", "./map.png");
 k.loadSprite("maparea", "./maparea.png");
