@@ -29,6 +29,9 @@ k.loadSprite("attack", "./spritesheet.png", {
   },
 });
 
+
+// maybe make some other entity that like walks beside mc, and some that like small mob villane etc.. first manage yhe dmg mecanics 
+
 k.loadSprite("boss", "./spritesheet.png", {
   sliceX: 39,
   sliceY: 31,
