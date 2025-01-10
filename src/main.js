@@ -29,6 +29,11 @@ k.loadSprite("attack", "./spritesheet.png", {
   },
 });
 
+
+// maybe make some other entity that like walks beside mc, and some that like small mob villane etc.. first manage yhe dmg mecanics 
+
+// dmg 1-4 px afar of mc like there is if done dmg continuously for 4 time fifth dmg is powerfull.... maybe make a inventory with 4 items like afk arena which can gacha dmg increase 
+
 k.loadSprite("boss", "./spritesheet.png", {
   sliceX: 39,
   sliceY: 31,
