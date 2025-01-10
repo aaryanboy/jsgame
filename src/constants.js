@@ -15,4 +15,24 @@ export const dialogueData = {
   library: `There are a lot of programming books on my shelves.`,
 
   chair: `pewdiepie gaming chair`,
+  exit3: `Cant Enter Yet.. room not made or coded`,
+};
+
+export const playerinfo = {
+  speed: 250,
+  direction: "down",
+  isInDialogue: false,
+  name: "Hero",
+  health: 100,
+  damage: 10,
+  critRate: 0.2,
+  critDamage: 1.5,
+};
+
+export const enemy = {
+  name: "Goblin",
+  health: 50,
+  damage: 8,
+  critRate: 0.1,
+  critDamage: 1.2,
 };

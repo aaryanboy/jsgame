@@ -1,4 +1,4 @@
-import { dialogueData, scaleFactor } from "./constants";
+import { dialogueData, scaleFactor, playerinfo } from "./constants";
 import { k } from "./kaboomCtx";
 import { displayDialogue, setCamScale } from "./utils";
 
@@ -108,11 +108,32 @@ function loadRoom(roomName) {
       k.scale(scaleFactor),
       { z: 2 },
       {
-        speed: 250,
+        speed: 200,
         direction: "down",
         isInDialogue: false,
+        health: 100,
+        damage: 10,
+        critRate: 0.2,
+        critDamage: 1.5,
       },
       "player",
+    ]);
+
+    // add enemy
+    const enemy = k.make([
+      k.sprite("boss", { anim: "idle-down" }), // Use an enemy sprite
+      k.area(),
+      k.body({ isStatic: true }),
+      k.anchor("center"),
+      k.pos(position), // Position from the spawnpoint
+      k.scale(scaleFactor),
+      { z: 2 },
+      {
+        health: 50, // Enemy health
+        damage: 10, // Enemy damage
+        speed: 100, // Movement speed (if needed)
+      },
+      "enemy", // Tag to identify this as an enemy
     ]);
 
     if (roomName === "area") {
