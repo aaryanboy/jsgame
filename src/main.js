@@ -39,8 +39,10 @@ k.loadSprite("boss", "./spritesheet.png", {
   anims: {
     "idle-down": 862,
     "walk-down": { from: 862, to: 863, loop: true, speed: 8 },
-    "idle-side": 864,
-    "walk-side": { from: 864, to: 865, loop: true, speed: 8 },
+    "idle-right": 864,
+    "walk-right": { from: 864, to: 866, loop: true, speed: 8 },
+    "idle-left": 903,
+    "walk-left": { from: 903, to: 905, loop: true, speed: 8 },
     "idle-up": 901,
     "walk-up": { from: 901, to: 902, loop: true, speed: 8 },
   },
@@ -140,6 +142,12 @@ function loadRoom(roomName) {
       "boss", // Tag to identify this as an enemy
     ]);
 
+    // Define movement speed and direction change interval
+    const movementSpeed = 150; // Speed of movement per frame
+    let moveDirection = k.vec2(0, 0); // Initial movement direction
+    let moveCooldown = 0; // Cooldown timer to control direction changes
+    let moveOrStop = 0; //moveor stop choose
+
     if (roomName === "area") {
       k.add([
         k.sprite("tree"),
@@ -193,23 +201,24 @@ function loadRoom(roomName) {
             });
           }
 
-          if (boundary.name) {
-            player.onCollide(boundary.name, () => {
-              if (dialogueData[boundary.name]) {
-                // Dialogue data exists for this boundary
-                player.isInDialogue = true;
-                displayDialogue(
-                  dialogueData[boundary.name],
-                  () => (player.isInDialogue = false)
-                );
-              } else {
-                // No dialogue data available
-                console.log(
-                  `No dialogue available for boundary: ${boundary.name}`
-                );
-              }
-            });
-          }
+          if (boundary)
+            if (boundary.name) {
+              player.onCollide(boundary.name, () => {
+                if (dialogueData[boundary.name]) {
+                  // Dialogue data exists for this boundary
+                  player.isInDialogue = true;
+                  displayDialogue(
+                    dialogueData[boundary.name],
+                    () => (player.isInDialogue = false)
+                  );
+                } else {
+                  // No dialogue data available
+                  console.log(
+                    `No dialogue available for boundary: ${boundary.name}`
+                  );
+                }
+              });
+            }
         }
         continue;
       }
@@ -244,7 +253,58 @@ function loadRoom(roomName) {
       k.camPos(player.pos.x, player.pos.y + 100);
     });
 
+    //random movement
+    k.onUpdate(() => {
+      moveCooldown -= k.dt(); // Reduce cooldown time
+
+      if (moveCooldown <= 0) {
+        moveOrStop = k.rand(1, 3);
+
+        switch (moveOrStop) {
+          case 1:
+            // Randomly select a new movement direction (x, y values between -1 and 1)
+            moveDirection = k.vec2(k.rand(-1, 1), k.rand(-1, 1));
+            console.log("2lucky");
+            break;
+          case 2:
+            console.log("lucky");
+            // No movement here, character stays in place
+            break;
+          case 3:
+            console.log("lucky");
+            // No movement here, character stays in place
+            break;
+        }
+
+        // Set a new random cooldown interval (1 to 3 seconds)
+        moveCooldown = k.rand(1, 3);
+      }
+
+      // Only move if we have a valid direction
+      if (moveOrStop === 1) {
+        // Move the character in the chosen direction
+        enemy.move(moveDirection.scale(movementSpeed));
+
+        // Update animations based on direction
+        if (moveDirection.x > 0) {
+          enemy.play("walk-right");
+        } else if (moveDirection.x < 0) {
+          enemy.play("walk-left");
+        } else if (moveDirection.y > 0) {
+          enemy.flipX = false;
+          enemy.play("walk-down");
+        } else if (moveDirection.y < 0) {
+          enemy.flipX = false;
+          enemy.play("walk-up");
+        }
+      }
+    });
+
+    //charater movenment by mouse
     k.onMouseDown((mouseBtn) => {
+      const audioContext = new AudioContext();
+      audioContext.resume();
+      // Now you can play sounds
       if (mouseBtn !== "left" || player.isInDialogue) return;
 
       //movement

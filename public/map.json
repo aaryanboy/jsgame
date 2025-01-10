@@ -91,7 +91,7 @@
                  "y":64
                 }, 
                 {
-                 "height":16,
+                 "height":23.9375,
                  "id":2,
                  "name":"exit_to_main",
                  "rotation":0,
@@ -99,10 +99,10 @@
                  "visible":true,
                  "width":16,
                  "x":32,
-                 "y":112
+                 "y":108.875
                 }, 
                 {
-                 "height":32,
+                 "height":34.625,
                  "id":3,
                  "name":"",
                  "rotation":0,
@@ -190,7 +190,7 @@
                  "y":64
                 }, 
                 {
-                 "height":32,
+                 "height":35.3125,
                  "id":17,
                  "name":"",
                  "rotation":0,
@@ -198,7 +198,7 @@
                  "visible":true,
                  "width":16,
                  "x":48,
-                 "y":80
+                 "y":76.6875
                 }, 
                 {
                  "height":16,
