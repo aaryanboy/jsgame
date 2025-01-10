@@ -29,10 +29,9 @@ k.loadSprite("attack", "./spritesheet.png", {
   },
 });
 
+// maybe make some other entity that like walks beside mc, and some that like small mob villane etc.. first manage yhe dmg mecanics
 
-// maybe make some other entity that like walks beside mc, and some that like small mob villane etc.. first manage yhe dmg mecanics 
-
-// dmg 1-4 px afar of mc like there is if done dmg continuously for 4 time fifth dmg is powerfull.... maybe make a inventory with 4 items like afk arena which can gacha dmg increase 
+// dmg 1-4 px afar of mc like there is if done dmg continuously for 4 time fifth dmg is powerfull.... maybe make a inventory with 4 items like afk arena which can gacha dmg increase
 
 k.loadSprite("boss", "./spritesheet.png", {
   sliceX: 39,
@@ -127,10 +126,10 @@ function loadRoom(roomName) {
     // add enemy
     const enemy = k.make([
       k.sprite("boss", { anim: "idle-down" }), // Use an enemy sprite
-      k.area(),
-      k.body({ isStatic: true }),
+      k.area({ shape: new k.Rect(k.vec2(0, 3), 10, 10) }),
+      k.body(),
       k.anchor("center"),
-      k.pos(position), // Position from the spawnpoint
+      k.pos(), // Position from the spawnpoint
       k.scale(scaleFactor),
       { z: 2 },
       {
@@ -138,7 +137,7 @@ function loadRoom(roomName) {
         damage: 10, // Enemy damage
         speed: 100, // Movement speed (if needed)
       },
-      "enemy", // Tag to identify this as an enemy
+      "boss", // Tag to identify this as an enemy
     ]);
 
     if (roomName === "area") {
@@ -224,6 +223,15 @@ function loadRoom(roomName) {
             k.add(player);
             continue;
           }
+
+          if (entity.name === "pet") {
+            enemy.pos = k.vec2(
+              (map.pos.x + entity.x) * scaleFactor, //move by scalefactor so visible
+              (map.pos.y + entity.y) * scaleFactor
+            );
+            k.add(enemy);
+            continue;
+          }
         }
       }
     }
@@ -242,7 +250,7 @@ function loadRoom(roomName) {
       //movement
       const worldMousePos = k.toWorld(k.mousePos());
       player.moveTo(worldMousePos, player.speed);
-      console.log("Moving to:", worldMousePos, "with speed:", player.speed); //for debugging
+      // console.log("Moving to:", worldMousePos, "with speed:", player.speed); //for debugging
 
       const mouseAngle = player.pos.angle(worldMousePos);
 
@@ -296,6 +304,11 @@ function loadRoom(roomName) {
       player.play("idle-side");
     });
 
+    k.onCollide("attack", "boss", () => {
+      console.log("You hit the boss!");
+      // Apply damage or other effects here
+    });
+
     let lastAttackSide = 1; // Track the last side attack animation used
 
     k.onKeyPress("space", () => {
@@ -336,6 +349,7 @@ function loadRoom(roomName) {
         k.pos(player.pos.add(attackOffset)), // Position relative to the player
         k.anchor("center"),
         k.scale(scaleFactor),
+        k.area(),
         { z: 6 },
         "attack",
       ]);
