@@ -254,48 +254,59 @@ function loadRoom(roomName) {
     });
 
     //random movement
+    // Random movement logic for enemy
     k.onUpdate(() => {
-      moveCooldown -= k.dt(); // Reduce cooldown time
+      // Reduce cooldown time
+      moveCooldown -= k.dt();
 
       if (moveCooldown <= 0) {
-        moveOrStop = k.rand(1, 3);
+        // Randomly determine action: move or stay still
+        moveOrStop = Math.floor(k.rand(1, 4)); // Random value: 1, 2, or 3
 
-        switch (moveOrStop) {
-          case 1:
-            // Randomly select a new movement direction (x, y values between -1 and 1)
-            moveDirection = k.vec2(k.rand(-1, 1), k.rand(-1, 1));
-            console.log("2lucky");
-            break;
-          case 2:
-            console.log("lucky");
-            // No movement here, character stays in place
-            break;
-          case 3:
-            console.log("lucky");
-            // No movement here, character stays in place
-            break;
+        if (moveOrStop === 1) {
+          // Generate a random direction vector (x, y between -1 and 1)
+          moveDirection = k.vec2(k.rand(-1, 1), k.rand(-1, 1)).unit(); // Normalize for consistent speed
+          console.log("Moving in direction:", moveDirection);
+        } else {
+          // No movement
+          moveDirection = k.vec2(0, 0);
+          console.log("Enemy stays still.");
         }
 
         // Set a new random cooldown interval (1 to 3 seconds)
         moveCooldown = k.rand(1, 3);
       }
 
-      // Only move if we have a valid direction
-      if (moveOrStop === 1) {
-        // Move the character in the chosen direction
+      // Move the enemy if the direction is non-zero
+      if (!moveDirection.eq(k.vec2(0, 0))) {
         enemy.move(moveDirection.scale(movementSpeed));
 
         // Update animations based on direction
-        if (moveDirection.x > 0) {
-          enemy.play("walk-right");
-        } else if (moveDirection.x < 0) {
-          enemy.play("walk-left");
-        } else if (moveDirection.y > 0) {
-          enemy.flipX = false;
-          enemy.play("walk-down");
-        } else if (moveDirection.y < 0) {
-          enemy.flipX = false;
-          enemy.play("walk-up");
+        // Move the enemy if the direction is non-zero
+        if (!moveDirection.eq(k.vec2(0, 0))) {
+          enemy.move(moveDirection.scale(movementSpeed));
+
+          // Update animations based on direction
+          if (Math.abs(moveDirection.y) > Math.abs(moveDirection.x)) {
+            // Prioritize vertical movement
+            if (moveDirection.y > 0) {
+              enemy.flipX = false;
+              enemy.play("walk-down");
+            } else {
+              enemy.flipX = false;
+              enemy.play("walk-up");
+            }
+          } else {
+            // Horizontal movement
+            if (moveDirection.x > 0) {
+              enemy.play("walk-right");
+            } else if (moveDirection.x < 0) {
+              enemy.play("walk-left");
+            }
+          }
+        } else {
+          // Optionally, you can stop the enemy's animation if they are stationary
+          enemy.stop();
         }
       }
     });
