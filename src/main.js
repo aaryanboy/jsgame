@@ -85,10 +85,10 @@ const roomData = {
 };
 
 // Load all rooms
-loadRoom("main");
+// loadRoom("main");
 loadRoom("map");
-loadRoom("area");
-loadRoom("boss");
+// loadRoom("area");
+// loadRoom("boss");
 
 k.setBackground(k.Color.fromHex("#311047"));
 
@@ -207,7 +207,9 @@ function loadRoom(roomName) {
           if (boundary.name === "exit_to_main") {
             player.onCollide(boundary.name, () => {
               k.destroyAll();
-              k.go("main"); // Transition to the main room
+              loadRoom("main", () => {
+                k.go("main");
+              }); // Transition to the main room
             });
           }
 
@@ -275,9 +277,6 @@ function loadRoom(roomName) {
 
     //charater movenment by mouse
     k.onMouseDown((mouseBtn) => {
-      const audioContext = new AudioContext();
-      audioContext.resume();
-      // Now you can play sounds
       if (mouseBtn !== "left" || player.isInDialogue) return;
 
       //movement
@@ -421,8 +420,7 @@ function loadRoom(roomName) {
       // (Optional) Add collision logic or other attack effects
     });
   });
+
+  k.go("map");
 }
 // Load the initial room
-loadRoom("main");
-loadRoom("map");
-k.go("map");
