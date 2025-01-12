@@ -3,6 +3,7 @@ import { k } from "./kaboomCtx";
 import { displayDialogue, setCamScale } from "./utils";
 import { setupEnemyMovement } from "./enemymovement";
 import { calculateDamage } from "./damageCalculation.js";
+import { openInventory } from "./inventory.js";
 
 // Load sprites
 k.loadSprite("spritesheet", "./spritesheet.png", {
@@ -144,6 +145,16 @@ function loadRoom(roomName) {
       "boss", // Tag to identify this as an enemy
     ]);
 
+    const pcBoundary = k.make([
+      k.rect(100, 50), // A rectangle to represent the PC boundary
+
+      k.color(0, 0, 1), // Color for visualization
+      k.area(), // Adds collision area
+      k.pos(),
+      // Makes it solid if needed
+      "pc", // Tag to identify it as "PC"
+    ]);
+
     // Define movement speed and direction change interval
     const movementSpeed = enemy.speed; // Speed of movement per frame
 
@@ -242,6 +253,14 @@ function loadRoom(roomName) {
 
             continue;
           }
+
+          if (entity.name === "pc") {
+            pcBoundary.pos = k.vec2(
+              (map.pos.x + entity.x) * scaleFactor, //move by scalefactor so visible
+              (map.pos.y + entity.y) * scaleFactor
+            );
+            k.add(pcBoundary);
+          }
         }
       }
     }
@@ -339,6 +358,11 @@ function loadRoom(roomName) {
 
         // Optionally, you can trigger other events here, like playing a victory sound
       }
+    });
+
+    k.onKeyPress("e", () => {
+      console.log("Opening inventory...");
+      openInventory(k); // Call the inventory function
     });
 
     let lastAttackSide = 1; // Track the last side attack animation used

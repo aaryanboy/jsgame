@@ -355,6 +355,18 @@
                  "width":0,
                  "x":97.333333333333,
                  "y":124
+                }, 
+                {
+                 "height":0,
+                 "id":41,
+                 "name":"pc",
+                 "point":true,
+                 "rotation":0,
+                 "type":"",
+                 "visible":true,
+                 "width":0,
+                 "x":168.333333333333,
+                 "y":84.6666666666667
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -363,7 +375,7 @@
          "y":0
         }],
  "nextlayerid":6,
- "nextobjectid":41,
+ "nextobjectid":43,
  "orientation":"orthogonal",
  "renderorder":"right-down",
  "tiledversion":"1.11.0",
