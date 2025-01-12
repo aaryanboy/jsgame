@@ -313,6 +313,7 @@ function loadRoom(roomName) {
           }
         } else {
           console.log("Enemy 3.");
+          // make bot able to go to certain part of map from wherever so the bot doesnt get stuck or lost
         }
 
         // Set a new random cooldown interval (1 to 3 seconds)
