@@ -1,6 +1,8 @@
 import { dialogueData, scaleFactor, playerinfo } from "./constants";
 import { k } from "./kaboomCtx";
 import { displayDialogue, setCamScale } from "./utils";
+import { setupEnemyMovement } from "./enemymovement";
+import { calculateDamage } from "./damageCalculation.js";
 
 // Load sprites
 k.loadSprite("spritesheet", "./spritesheet.png", {
@@ -119,8 +121,8 @@ function loadRoom(roomName) {
         isInDialogue: false,
         health: 100,
         damage: 10,
-        critRate: 0.2,
-        critDamage: 1.5,
+        critRate: 0,
+        critDamage: 0,
       },
       "player",
     ]);
@@ -137,17 +139,13 @@ function loadRoom(roomName) {
       {
         health: 50, // Enemy health
         damage: 10, // Enemy damage
-        speed: 100, // Movement speed (if needed)
+        speed: 50, // Movement speed (if needed)
       },
       "boss", // Tag to identify this as an enemy
     ]);
 
     // Define movement speed and direction change interval
-    const movementSpeed = 50; // Speed of movement per frame
-    let moveDirection = k.vec2(0, 0); // Initial movement direction
-    let moveCooldown = 0; // Cooldown timer to control direction changes
-    let moveOrStop = 0; //moveor stop choose
-    let lastDirection = "down"; // Default direction
+    const movementSpeed = enemy.speed; // Speed of movement per frame
 
     if (roomName === "area") {
       k.add([
@@ -240,6 +238,8 @@ function loadRoom(roomName) {
               (map.pos.y + entity.y) * scaleFactor
             );
             k.add(enemy);
+            setupEnemyMovement(k, enemy, movementSpeed);
+
             continue;
           }
         }
@@ -252,78 +252,6 @@ function loadRoom(roomName) {
     });
     k.onUpdate(() => {
       k.camPos(player.pos.x, player.pos.y + 100);
-    });
-
-    //random movement
-    // Random movement logic for enemy
-    k.onUpdate(() => {
-      // Reduce cooldown time
-      moveCooldown -= k.dt();
-
-      if (moveCooldown <= 0) {
-        // Randomly determine action: move or stay still
-        moveOrStop = Math.floor(k.rand(1, 4)); // Random value: 1, 2, or 3
-
-        if (moveOrStop === 1) {
-          // Generate a random direction vector (x, y between -1 and 1)
-          moveDirection = k.vec2(k.rand(-1, 1), k.rand(-1, 1)).unit(); // Normalize for consistent speed
-          console.log("Moving in direction:", moveDirection);
-
-          // Determine and play the movement animation based on direction
-          if (Math.abs(moveDirection.y) > Math.abs(moveDirection.x)) {
-            // Prioritize vertical movement
-            if (moveDirection.y > 0) {
-              enemy.flipX = false;
-              enemy.play("walk-down");
-              lastDirection = "down";
-            } else {
-              enemy.flipX = false;
-              enemy.play("walk-up");
-              lastDirection = "up";
-            }
-          } else {
-            // Horizontal movement
-            if (moveDirection.x > 0) {
-              enemy.play("walk-right");
-              lastDirection = "right";
-            } else if (moveDirection.x < 0) {
-              enemy.play("walk-left");
-              lastDirection = "left";
-            }
-          }
-        } else if (moveOrStop === 2) {
-          // No movement
-          moveDirection = k.vec2(0, 0);
-          console.log("Enemy stays still.");
-
-          // Play the idle animation based on the last direction
-          switch (lastDirection) {
-            case "down":
-              enemy.play("idle-down");
-              break;
-            case "up":
-              enemy.play("idle-up");
-              break;
-            case "right":
-              enemy.play("idle-right");
-              break;
-            case "left":
-              enemy.play("idle-left");
-              break;
-          }
-        } else {
-          console.log("Enemy 3.");
-          // make bot able to go to certain part of map from wherever so the bot doesnt get stuck or lost
-        }
-
-        // Set a new random cooldown interval (1 to 3 seconds)
-        moveCooldown = k.rand(1, 3);
-      }
-
-      // Move the enemy only if there's a direction
-      if (!moveDirection.eq(k.vec2(0, 0))) {
-        enemy.move(moveDirection.scale(movementSpeed));
-      }
     });
 
     //charater movenment by mouse
@@ -392,7 +320,25 @@ function loadRoom(roomName) {
 
     k.onCollide("attack", "boss", () => {
       console.log("You hit the boss!");
-      // Apply damage or other effects here
+      // Decrease boss health
+      let totalDamage = calculateDamage(
+        player.damage,
+        player.critDamage,
+        player.critRate
+      );
+      enemy.health -= totalDamage;
+      // console.log(`Boss health: ${enemy.health}`);
+      // console.log(`Total damage: ${totalDamage}`);
+
+      // Check if the boss is defeated
+      if (enemy.health <= 0) {
+        console.log("Boss defeated!");
+
+        enemy.onUpdate = null;
+        enemy.destroy();
+
+        // Optionally, you can trigger other events here, like playing a victory sound
+      }
     });
 
     let lastAttackSide = 1; // Track the last side attack animation used
@@ -418,14 +364,14 @@ function loadRoom(roomName) {
           attackOffset = k.vec2(-36, 0); // Place to the left
           attackAnim = lastAttackSide === 1 ? "attack-left" : "attack-right";
           flipX = true; // Flip the attack sprite for left direction
-          lastAttackSide = lastAttackSide === 1 ? 2 : 1; // Toggle side
+          lastAttackSide = lastAttackSide === 1 ? 2 : 1;
           break;
         case "right":
           attackOffset = k.vec2(36, 0); // Place to the right
           // Alternate between side1 and side2
           attackAnim = lastAttackSide === 1 ? "attack-left" : "attack-right";
           flipX = false; // No flip for right direction
-          lastAttackSide = lastAttackSide === 1 ? 2 : 1; // Toggle side
+          lastAttackSide = lastAttackSide === 1 ? 2 : 1;
           break;
       }
 
@@ -443,7 +389,7 @@ function loadRoom(roomName) {
       attackSprite.flipX = flipX;
 
       // Remove the attack sprite after the animation duration
-      const animationDuration = 0.5; // Adjust based on the sprite animation length
+      const animationDuration = 0.5;
       k.wait(animationDuration, () => {
         k.destroy(attackSprite);
       });
