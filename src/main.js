@@ -40,9 +40,9 @@ k.loadSprite("boss", "./spritesheet.png", {
     "idle-down": 862,
     "walk-down": { from: 862, to: 863, loop: true, speed: 8 },
     "idle-right": 864,
-    "walk-right": { from: 864, to: 866, loop: true, speed: 8 },
+    "walk-right": { from: 864, to: 865, loop: true, speed: 8 },
     "idle-left": 903,
-    "walk-left": { from: 903, to: 905, loop: true, speed: 8 },
+    "walk-left": { from: 903, to: 904, loop: true, speed: 8 },
     "idle-up": 901,
     "walk-up": { from: 901, to: 902, loop: true, speed: 8 },
   },
@@ -143,10 +143,11 @@ function loadRoom(roomName) {
     ]);
 
     // Define movement speed and direction change interval
-    const movementSpeed = 150; // Speed of movement per frame
+    const movementSpeed = 50; // Speed of movement per frame
     let moveDirection = k.vec2(0, 0); // Initial movement direction
     let moveCooldown = 0; // Cooldown timer to control direction changes
     let moveOrStop = 0; //moveor stop choose
+    let lastDirection = "down"; // Default direction
 
     if (roomName === "area") {
       k.add([
@@ -267,47 +268,60 @@ function loadRoom(roomName) {
           // Generate a random direction vector (x, y between -1 and 1)
           moveDirection = k.vec2(k.rand(-1, 1), k.rand(-1, 1)).unit(); // Normalize for consistent speed
           console.log("Moving in direction:", moveDirection);
-        } else {
+
+          // Determine and play the movement animation based on direction
+          if (Math.abs(moveDirection.y) > Math.abs(moveDirection.x)) {
+            // Prioritize vertical movement
+            if (moveDirection.y > 0) {
+              enemy.flipX = false;
+              enemy.play("walk-down");
+              lastDirection = "down";
+            } else {
+              enemy.flipX = false;
+              enemy.play("walk-up");
+              lastDirection = "up";
+            }
+          } else {
+            // Horizontal movement
+            if (moveDirection.x > 0) {
+              enemy.play("walk-right");
+              lastDirection = "right";
+            } else if (moveDirection.x < 0) {
+              enemy.play("walk-left");
+              lastDirection = "left";
+            }
+          }
+        } else if (moveOrStop === 2) {
           // No movement
           moveDirection = k.vec2(0, 0);
           console.log("Enemy stays still.");
+
+          // Play the idle animation based on the last direction
+          switch (lastDirection) {
+            case "down":
+              enemy.play("idle-down");
+              break;
+            case "up":
+              enemy.play("idle-up");
+              break;
+            case "right":
+              enemy.play("idle-right");
+              break;
+            case "left":
+              enemy.play("idle-left");
+              break;
+          }
+        } else {
+          console.log("Enemy 3.");
         }
 
         // Set a new random cooldown interval (1 to 3 seconds)
         moveCooldown = k.rand(1, 3);
       }
 
-      // Move the enemy if the direction is non-zero
+      // Move the enemy only if there's a direction
       if (!moveDirection.eq(k.vec2(0, 0))) {
         enemy.move(moveDirection.scale(movementSpeed));
-
-        // Update animations based on direction
-        // Move the enemy if the direction is non-zero
-        if (!moveDirection.eq(k.vec2(0, 0))) {
-          enemy.move(moveDirection.scale(movementSpeed));
-
-          // Update animations based on direction
-          if (Math.abs(moveDirection.y) > Math.abs(moveDirection.x)) {
-            // Prioritize vertical movement
-            if (moveDirection.y > 0) {
-              enemy.flipX = false;
-              enemy.play("walk-down");
-            } else {
-              enemy.flipX = false;
-              enemy.play("walk-up");
-            }
-          } else {
-            // Horizontal movement
-            if (moveDirection.x > 0) {
-              enemy.play("walk-right");
-            } else if (moveDirection.x < 0) {
-              enemy.play("walk-left");
-            }
-          }
-        } else {
-          // Optionally, you can stop the enemy's animation if they are stationary
-          enemy.stop();
-        }
       }
     });
 
