@@ -13,3 +13,6 @@ throughout this development process i found various things about game dev. like 
 i also found that enemy battle are done with help of path finding algorithm, so descreet math is important.
 
 i found why making separate file for saperate concept is better than all code at same file... it becomes completely messy, 
+
+
+hopefully its easier there 
