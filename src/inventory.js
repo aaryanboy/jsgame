@@ -8,7 +8,7 @@ export function openInventory(k) {
     "inventory", // Tag to identify the inventory UI
   ]);
 
-  // Close inventory on pressing Escape
+  // Close inventory on pressing Escape not working
   k.onKeyPress("escape", () => {
     console.log("Closing inventory...");
     k.destroyAll("inventory"); // Destroy all inventory UI elements
