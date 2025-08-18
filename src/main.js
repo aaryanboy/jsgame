@@ -1,7 +1,7 @@
 import { dialogueData, scaleFactor, playerinfo } from "./constants";
 import { k } from "./kaboomCtx";
 import { displayDialogue, setCamScale } from "./utils";
-import { setupEnemyMovement } from "./enemymovement";
+import { setupEnemyMovement } from "./enemymovement";// hello
 import { calculateDamage } from "./damageCalculation.js";
 import { openInventory } from "./inventory.js";
 

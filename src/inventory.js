@@ -6,9 +6,12 @@ export function openInventory(k) {
     k.color(0, 0, 0), // Background color
     k.outline(2, k.rgb(1, 1, 1)), // Outline color
     "inventory", // Tag to identify the inventory UI
+
+
+hdubdd
   ]);
 
-  // Close inventory on pressing Escape
+  // Close inventory on pressing Escape not workinghihd
   k.onKeyPress("escape", () => {
     console.log("Closing inventory...");
     k.destroyAll("inventory"); // Destroy all inventory UI elements

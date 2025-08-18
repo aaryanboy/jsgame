@@ -4,7 +4,7 @@ export function setupEnemyMovement(k, enemy, movementSpeed) {
   let moveDirection = k.vec2(0, 0);
   let lastDirection = "down"; // Default starting direction
 
-  // Logic for random movement
+  // Logic for random movement a
   enemy.onUpdate(() => {
     // Reduce cooldown time
     moveCooldown -= k.dt();
