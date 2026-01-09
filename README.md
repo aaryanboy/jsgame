@@ -15,4 +15,4 @@ i also found that enemy battle are done with help of path finding algorithm, so 
 i found why making separate file for saperate concept is better than all code at same file... it becomes completely messy, 
 
 boring af not ganna lie
-hopefully its easier there he 
+hopefully its easier there he hy
