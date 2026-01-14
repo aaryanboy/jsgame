@@ -45,3 +45,11 @@ export function setCamScale(k) {
     k.camScale(k.vec2(1.5));
   }
 }
+
+export const gameState = {
+  isPaused: false,
+};
+
+export function setGamePause(k, isPaused) {
+  gameState.isPaused = isPaused;
+}

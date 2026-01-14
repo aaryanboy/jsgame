@@ -1,4 +1,5 @@
-import { scaleFactor } from "../utils/constants.js";
+import { scaleFactor, playerinfo } from "../utils/constants.js";
+import { gameState } from "../utils/utils.js";
 import { openInventory } from "../systems/inventory.js";
 import { calculateDamage } from "../systems/damage.js";
 
@@ -67,6 +68,8 @@ export function setPlayerControls(k, player) {
     k.onUpdate(() => {
         k.camPos(player.pos.x, player.pos.y + 100);
 
+        if (gameState.isPaused) return; // Stop movement if paused
+
         if (player.isInDialogue) return;
 
         const speed = player.speed;
@@ -115,6 +118,7 @@ export function setPlayerControls(k, player) {
     // Attack
     let lastAttackSide = 1;
     k.onKeyPress("q", () => {
+        if (gameState.isPaused) return; // Stop attack if paused
         if (player.isInDialogue) return;
 
         let attackOffset = k.vec2(0, 0);

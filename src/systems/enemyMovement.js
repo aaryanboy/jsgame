@@ -1,4 +1,6 @@
 // enemyMovement.js
+import { gameState } from "../utils/utils.js";
+
 export function setupEnemyMovement(k, enemy, movementSpeed) {
   let moveCooldown = k.rand(1, 3);
   let moveDirection = k.vec2(0, 0);
@@ -6,6 +8,8 @@ export function setupEnemyMovement(k, enemy, movementSpeed) {
 
   // Logic for random movement a
   enemy.onUpdate(() => {
+    if (gameState.isPaused) return;
+
     // Reduce cooldown time
     moveCooldown -= k.dt();
 
