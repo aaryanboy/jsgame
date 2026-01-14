@@ -19,22 +19,24 @@ export function displayDialogue(text, onDisplayEnd) {
   }, 5); //5 sec
   const closeBtn = document.getElementById("close");
 
+  function onKeyDown(key) {
+    if (key.code === "Enter" || key.code === "Space") {
+      key.preventDefault();
+      onCloseBtnClick();
+    }
+  }
+
   function onCloseBtnClick() {
     onDisplayEnd();
-    dialogueUI.style.display = "none"; //diaglog is invisible and empty,, clear intervel if not done
+    dialogueUI.style.display = "none";
     dialogue.innerHTML = "";
     clearInterval(intervalRef);
     closeBtn.removeEventListener("click", onCloseBtnClick);
+    removeEventListener("keydown", onKeyDown);
   }
-// skill ossue
 
   closeBtn.addEventListener("click", onCloseBtnClick);
-
-  addEventListener("keypress", (key) => {
-    if (key.code === "Enter") {
-      closeBtn.click();
-    }
-  });
+  addEventListener("keydown", onKeyDown);
 }
 
 export function setCamScale(k) {

@@ -85,10 +85,10 @@ const roomData = {
 };
 
 // Load all rooms
-// loadRoom("main");
+loadRoom("main");
 loadRoom("map");
-// loadRoom("area");
-// loadRoom("boss");
+loadRoom("area");
+loadRoom("boss");
 
 k.setBackground(k.Color.fromHex("#311047"));
 
@@ -189,27 +189,29 @@ function loadRoom(roomName) {
           if (boundary.name === "exit_to_map") {
             player.onCollide(boundary.name, () => {
               k.destroyAll();
+              loadRoom("map");
               k.go("map"); // Transition to the map room
             });
           }
           if (boundary.name === "exit_to_area") {
             player.onCollide(boundary.name, () => {
               k.destroyAll();
+              loadRoom("area");
               k.go("area"); // Transition to the area room
             });
           }
           if (boundary.name === "exit_to_boss") {
             player.onCollide(boundary.name, () => {
               k.destroyAll();
+              loadRoom("boss");
               k.go("boss"); // Transition to the boss room
             });
           }
           if (boundary.name === "exit_to_main") {
             player.onCollide(boundary.name, () => {
               k.destroyAll();
-              loadRoom("main", () => {
-                k.go("main");
-              }); // Transition to the main room
+              loadRoom("main");
+              k.go("main");
             });
           }
 
@@ -273,67 +275,50 @@ function loadRoom(roomName) {
     });
     k.onUpdate(() => {
       k.camPos(player.pos.x, player.pos.y + 100);
-    });
 
-    //charater movenment by mouse
-    k.onMouseDown((mouseBtn) => {
-      if (mouseBtn !== "left" || player.isInDialogue) return;
+      if (player.isInDialogue) return;
 
-      //movement
-      const worldMousePos = k.toWorld(k.mousePos());
-      player.moveTo(worldMousePos, player.speed);
-      // console.log("Moving to:", worldMousePos, "with speed:", player.speed); //for debugging
+      const speed = player.speed;
+      let dx = 0;
+      let dy = 0;
 
-      const mouseAngle = player.pos.angle(worldMousePos);
+      if (k.isKeyDown("left") || k.isKeyDown("a")) dx = -1;
+      if (k.isKeyDown("right") || k.isKeyDown("d")) dx = 1;
+      if (k.isKeyDown("up") || k.isKeyDown("w")) dy = -1;
+      if (k.isKeyDown("down") || k.isKeyDown("s")) dy = 1;
 
-      const lowerBound = 50;
-      const upperBound = 125;
+      if (dx !== 0 || dy !== 0) {
+        const moveVec = k.vec2(dx, dy).unit().scale(speed);
+        player.move(moveVec);
 
-      if (
-        mouseAngle > lowerBound &&
-        mouseAngle < upperBound &&
-        player.curAnim() !== "walk-up" //up
-      ) {
-        player.play("walk-up");
-        player.direction = "up";
-        return;
+        if (dy < 0) {
+          if (player.curAnim() !== "walk-up") player.play("walk-up");
+          player.direction = "up";
+        } else if (dy > 0) {
+          if (player.curAnim() !== "walk-down") player.play("walk-down");
+          player.direction = "down";
+        } else if (dx < 0) {
+          if (player.curAnim() !== "walk-side") player.play("walk-side");
+          player.direction = "left";
+          player.flipX = true;
+        } else if (dx > 0) {
+          if (player.curAnim() !== "walk-side") player.play("walk-side");
+          player.direction = "right";
+          player.flipX = false;
+        }
+      } else {
+        const curAnim = player.curAnim();
+        if (player.direction === "up" && curAnim !== "idle-up") {
+          player.play("idle-up");
+        } else if (player.direction === "down" && curAnim !== "idle-down") {
+          player.play("idle-down");
+        } else if (
+          (player.direction === "left" || player.direction === "right") &&
+          curAnim !== "idle-side"
+        ) {
+          player.play("idle-side");
+        }
       }
-
-      if (
-        mouseAngle < -lowerBound &&
-        mouseAngle > -upperBound &&
-        player.curAnim() !== "walk-down" //down
-      ) {
-        player.play("walk-down");
-        player.direction = "down";
-        return;
-      }
-      if (Math.abs(mouseAngle) > upperBound) {
-        player.flipX = false;
-        if (player.curAnim() !== "walk-side") player.play("walk-side"); //rignt
-        player.direction = "right";
-        return;
-      }
-
-      if (Math.abs(mouseAngle) < lowerBound) {
-        player.flipX = true;
-        if (player.curAnim() !== "walk-side") player.play("walk-side"); //left
-        player.direction = "left";
-        return;
-      }
-    });
-
-    k.onMouseRelease(() => {
-      if (player.direction === "up") {
-        player.play("idle-up");
-        return;
-      }
-      if (player.direction === "down") {
-        player.play("idle-down");
-        return;
-      }
-
-      player.play("idle-side");
     });
 
     k.onCollide("attack", "boss", () => {
@@ -366,7 +351,7 @@ function loadRoom(roomName) {
 
     let lastAttackSide = 1; // Track the last side attack animation used
 
-    k.onKeyPress("space", () => {
+    k.onKeyPress("q", () => {
       if (player.isInDialogue) return; // Prevent attacks during dialogue
 
       // Determine the position and direction of the attack sprite
@@ -420,7 +405,7 @@ function loadRoom(roomName) {
       // (Optional) Add collision logic or other attack effects
     });
   });
-
-  k.go("map");
 }
+
+k.go("map");
 // Load the initial room
