@@ -20,7 +20,7 @@ export function displayDialogue(text, onDisplayEnd) {
   const closeBtn = document.getElementById("close");
 
   function onKeyDown(key) {
-    if (key.code === "Enter" || key.code === "Space") {
+    if (key.code === "Space") {
       key.preventDefault();
       onCloseBtnClick();
     }
@@ -31,11 +31,9 @@ export function displayDialogue(text, onDisplayEnd) {
     dialogueUI.style.display = "none";
     dialogue.innerHTML = "";
     clearInterval(intervalRef);
-    closeBtn.removeEventListener("click", onCloseBtnClick);
     removeEventListener("keydown", onKeyDown);
   }
 
-  closeBtn.addEventListener("click", onCloseBtnClick);
   addEventListener("keydown", onKeyDown);
 }
 
