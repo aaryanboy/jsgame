@@ -38,11 +38,30 @@ export function loadAssets(k) {
         },
     });
 
+    k.loadSprite("pet", "./spritesheet.png", {
+        sliceX: 39,
+        sliceY: 31,
+        anims: {
+            "idle-down": 788,
+            "walk-down": { from: 788, to: 789, loop: true, speed: 8 },
+            "idle-right": 790,
+            "walk-right": { from: 790, to: 791, loop: true, speed: 8 },
+            "idle-left": 829,
+            "walk-left": { from: 829, to: 830, loop: true, speed: 8 },
+            "idle-up": 827,
+            "walk-up": { from: 827, to: 828, loop: true, speed: 8 },
+        },
+    });
+
     k.loadSprite("mainroom", "./mainroom.png");
     k.loadSprite("maproom", "./map.png");
     k.loadSprite("maparea", "./maparea.png");
+    // Load Music
     k.loadSprite("bossroom", "./bossroom.png");
     k.loadSprite("tree", "./trees.png"); // Tree foreground
+
+    // Load Music
+    k.loadSound("bgm", "/music/backgroundmusic.mp3");
 
     k.setBackground(k.Color.fromHex("#311047"));
 }

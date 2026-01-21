@@ -2,6 +2,8 @@ import { k } from "./kaboomCtx.js";
 import { loadAssets } from "./systems/loader.js";
 import { loadRoom } from "./world/roomManager.js";
 
+import { gameState } from "./utils/utils.js";
+
 // 1. Load Assets
 loadAssets(k);
 
@@ -17,4 +19,18 @@ loadRoom(k, "area");
 loadRoom(k, "boss");
 
 // 3. Start the Game
-k.go("map");
+k.scene("intro", () => {
+    k.add([
+        k.text("Press Enter to Start", { size: 32 }),
+        k.pos(k.center()),
+        k.anchor("center"),
+        k.color(255, 255, 255),
+    ]);
+
+    k.onKeyPress("enter", () => {
+        gameState.bgm = k.play("bgm", { loop: true, volume: 0.5 });
+        k.go("map");
+    });
+});
+
+k.go("intro");

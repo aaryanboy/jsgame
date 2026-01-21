@@ -48,8 +48,16 @@ export function setCamScale(k) {
 
 export const gameState = {
   isPaused: false,
+  bgm: null,
 };
 
 export function setGamePause(k, isPaused) {
   gameState.isPaused = isPaused;
+  if (gameState.bgm) {
+    if (isPaused) {
+      gameState.bgm.pause();
+    } else {
+      gameState.bgm.play();
+    }
+  }
 }

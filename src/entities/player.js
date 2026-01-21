@@ -33,22 +33,41 @@ export function setPlayerControls(k, player) {
     const barWidth = 200;
     const barHeight = 20;
 
-    // Background (Grey)
-    k.add([
-        k.rect(barWidth, barHeight),
-        k.pos(k.width() - barWidth - 20, k.height() - barHeight - 20),
-        k.color(100, 100, 100),
+    // Container for Health Bar (Fixed on Screen)
+    const healthContainer = k.add([
+        k.pos(20, 20),
         k.fixed(),
         { z: 100 }
     ]);
 
-    // Foreground (Red/Green - Dynamic)
-    const healthBar = k.add([
+    // Label
+    healthContainer.add([
+        k.text("HP", { size: 24, font: "monospace" }),
+        k.pos(0, -5),
+        k.color(255, 255, 255),
+    ]);
+
+    // Background (Grey)
+    healthContainer.add([
         k.rect(barWidth, barHeight),
-        k.pos(k.width() - barWidth - 20, k.height() - barHeight - 20),
+        k.pos(40, 0),
+        k.color(50, 50, 50),
+        k.outline(2, k.Color.WHITE),
+    ]);
+
+    // Foreground (Red/Green - Dynamic)
+    const healthBar = healthContainer.add([
+        k.rect(barWidth, barHeight),
+        k.pos(40, 0),
         k.color(0, 255, 0), // Green initially
-        k.fixed(),
-        { z: 100 }
+    ]);
+
+    // HP Text Overlay
+    const hpText = healthContainer.add([
+        k.text("100/100", { size: 16, font: "monospace" }),
+        k.pos(40 + barWidth / 2, barHeight / 2),
+        k.anchor("center"),
+        k.color(255, 255, 255),
     ]);
 
     healthBar.onUpdate(() => {
@@ -56,9 +75,14 @@ export function setPlayerControls(k, player) {
         const ratio = player.health / totalHealth;
         healthBar.width = barWidth * Math.max(0, ratio);
 
-        // Dynamic Color (Green -> Red)
+        // Update Text
+        hpText.text = `${Math.ceil(player.health)}/${totalHealth}`;
+
+        // Dynamic Color
         if (ratio < 0.3) {
             healthBar.color = k.rgb(255, 0, 0);
+        } else if (ratio < 0.6) {
+            healthBar.color = k.rgb(255, 165, 0);
         } else {
             healthBar.color = k.rgb(0, 255, 0);
         }

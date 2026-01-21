@@ -19,6 +19,29 @@ export function createBoss(k) {
         "boss",
     ]);
 
+    // Add Health Bar
+    const barWidth = 40;
+    const barHeight = 4;
+
+    // Background (Red)
+    boss.add([
+        k.rect(barWidth, barHeight),
+        k.pos(-barWidth / 2, -20),
+        k.color(255, 0, 0),
+    ]);
+
+    // Foreground (Green)
+    const hpBar = boss.add([
+        k.rect(barWidth, barHeight),
+        k.pos(-barWidth / 2, -20),
+        k.color(0, 255, 0),
+    ]);
+
+    // Update HP Bar
+    hpBar.onUpdate(() => {
+        hpBar.width = barWidth * (boss.health / 50); // Assuming max health is 50
+    });
+
     return boss;
 }
 

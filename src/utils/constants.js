@@ -25,10 +25,11 @@ export const playerinfo = {
   critDamage: 1.5,
 };
 
-export const enemy = {
-  name: "Goblin",
+export const bossInfo = {
+  name: "Boss",
   health: 50,
-  damage: 8,
+  damage: 10,
+  speed: 50,
   critRate: 0.1,
   critDamage: 1.2,
 };
