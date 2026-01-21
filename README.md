@@ -16,3 +16,4 @@ i found why making separate file for saperate concept is better than all code at
 
 boring af not ganna lie
 hopefully its easier there he hy
+hgg
