@@ -1,5 +1,5 @@
 import { scaleFactor } from "../utils/constants.js";
-import { setupEnemyMovement } from "../systems/enemyMovement.js";
+import { setupBossAI } from "../systems/bossAI.js";
 import { calculateDamage } from "../systems/damage.js";
 
 export function createBoss(k) {
@@ -12,9 +12,9 @@ export function createBoss(k) {
         k.scale(scaleFactor),
         { z: 2 },
         {
-            health: 50,
-            damage: 10,
-            speed: 50,
+            health: 100,
+            damage: 20,
+            speed: 100,
         },
         "boss",
     ]);
@@ -39,15 +39,15 @@ export function createBoss(k) {
 
     // Update HP Bar
     hpBar.onUpdate(() => {
-        hpBar.width = barWidth * (boss.health / 50); // Assuming max health is 50
+        hpBar.width = barWidth * (boss.health / 100);
     });
 
     return boss;
 }
 
 export function setupBossLogic(k, boss, player) {
-    // Movement logic
-    setupEnemyMovement(k, boss, boss.speed);
+    // Advanced Boss AI
+    setupBossAI(k, boss, player);
 
     // Collision/Combat logic
     k.onCollide("attack", "boss", () => {

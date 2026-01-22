@@ -34,3 +34,22 @@ k.scene("intro", () => {
 });
 
 k.go("intro");
+
+k.scene("gameover", () => {
+    k.add([
+        k.text("Game Over", { size: 64 }),
+        k.pos(k.center()),
+        k.anchor("center"),
+        k.color(255, 0, 0),
+    ]);
+    k.add([
+        k.text("Press Enter to Retry", { size: 24 }),
+        k.pos(k.center().add(0, 50)),
+        k.anchor("center"),
+        k.color(255, 255, 255),
+    ]);
+
+    k.onKeyPress("enter", () => {
+        k.go("intro");
+    });
+});

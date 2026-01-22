@@ -4,6 +4,7 @@ import { createPlayer, setPlayerControls } from "../entities/player.js";
 import { createBoss, setupBossLogic } from "../entities/boss.js";
 import { setupEnemyMovement } from "../systems/enemyMovement.js";
 import { createFrog } from "../entities/frog.js";
+import { petState, spawnPetInNewRoom, checkPetTransition } from "../systems/persistentPet.js";
 
 export const roomData = {
     main: {
@@ -51,6 +52,7 @@ export function loadRoom(k, roomName, spawnPoint = "player") {
         // Variables to hold entities created in this scene
         let player = null;
         let enemy = null;
+        let persistentPet = null;
 
         // We need to define these beforehand so we can use them in the loop
         const pcBoundary = k.make([
@@ -130,6 +132,9 @@ export function loadRoom(k, roomName, spawnPoint = "player") {
                     }
                     k.add(player);
                     setPlayerControls(k, player);
+
+                    // Attempt to spawn persistent pet (pass createFrog as dependency)
+                    persistentPet = spawnPetInNewRoom(k, player, createFrog);
                 }
 
                 // Now handle other spawn entities
@@ -151,6 +156,9 @@ export function loadRoom(k, roomName, spawnPoint = "player") {
 
                     // Pet Entity ( Friendly / No Combat )
                     if (entity.name === "pet" || entity.name === "frog") {
+                        // If persistent pet logic is active (alive or dead), skip map spawn
+                        if (petState.shouldPersist) continue;
+
                         const startPos = k.vec2(
                             (map.pos.x + entity.x) * scaleFactor,
                             (map.pos.y + entity.y) * scaleFactor
@@ -187,22 +195,26 @@ export function loadRoom(k, roomName, spawnPoint = "player") {
 
         // Exit Transitions
         k.onCollide("player", "exit_to_map", () => {
+            checkPetTransition(player); // Check if pet should follow
             k.destroyAll();
             nextSpawnPoint = "return"; // Use return spawn when coming back
             loadRoom(k, "map");
             k.go("map");
         });
         k.onCollide("player", "exit_to_area", () => {
+            checkPetTransition(player);
             k.destroyAll();
             loadRoom(k, "area");
             k.go("area");
         });
         k.onCollide("player", "exit_to_boss", () => {
+            checkPetTransition(player);
             k.destroyAll();
             loadRoom(k, "boss");
             k.go("boss");
         });
         k.onCollide("player", "exit_to_main", () => {
+            checkPetTransition(player);
             k.destroyAll();
             loadRoom(k, "main");
             k.go("main");

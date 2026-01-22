@@ -2,6 +2,8 @@ import { scaleFactor, playerinfo } from "../utils/constants.js";
 import { gameState } from "../utils/utils.js";
 import { openInventory } from "../systems/inventory.js";
 import { calculateDamage } from "../systems/damage.js";
+import { toggleTimeStop, getTimeScale } from "../systems/timeStop.js";
+import { revivePet, isPetDead } from "./frog.js";
 
 export function createPlayer(k) {
     const player = k.make([
@@ -35,7 +37,7 @@ export function setPlayerControls(k, player) {
 
     // Container for Health Bar (Fixed on Screen)
     const healthContainer = k.add([
-        k.pos(20, 20),
+        k.pos(k.width() - 300, 20),
         k.fixed(),
         { z: 100 }
     ]);
@@ -90,13 +92,24 @@ export function setPlayerControls(k, player) {
 
     // Camera follow
     k.onUpdate(() => {
+        // Check for Death
+        if (player.health <= 0) {
+            k.go("gameover");
+            return;
+        }
+
         k.camPos(player.pos.x, player.pos.y + 100);
 
         if (gameState.isPaused) return; // Stop movement if paused
 
         if (player.isInDialogue) return;
 
-        const speed = player.speed;
+        // Block all movement when time is fully stopped
+        if (gameState.isTimeStopped) return;
+
+        // Apply time scale to movement speed
+        const timeScale = getTimeScale();
+        const speed = player.speed * timeScale;
         let dx = 0;
         let dy = 0;
 
@@ -190,8 +203,42 @@ export function setPlayerControls(k, player) {
         });
     });
 
-    // Inventory
+    // Time Stop (E key)
     k.onKeyPress("e", () => {
+        if (player.isInDialogue) return;
+        toggleTimeStop(k);
+    });
+
+    // Inventory (Tab key)
+    k.onKeyPress("tab", () => {
         openInventory(k);
+    });
+
+    // Revive Pet (T key near TV)
+    k.onKeyPress("t", () => {
+        if (player.isInDialogue) return;
+        if (gameState.isPaused) return;
+
+        // Check if player is near a TV
+        const tvObjects = k.get("tv");
+        let nearTV = false;
+
+        for (const tv of tvObjects) {
+            const distance = player.pos.dist(tv.pos);
+            if (distance < 50) {
+                nearTV = true;
+                break;
+            }
+        }
+
+        if (nearTV && isPetDead()) {
+            if (revivePet()) {
+                console.log("Pet has been revived by the TV!");
+            }
+        } else if (!nearTV) {
+            console.log("You need to be near a TV to revive your pet.");
+        } else if (!isPetDead()) {
+            console.log("Your pet is still alive!");
+        }
     });
 }

@@ -49,6 +49,8 @@ export function setCamScale(k) {
 export const gameState = {
   isPaused: false,
   bgm: null,
+  timeScale: 1.0,
+  isTimeStopped: false,
 };
 
 export function setGamePause(k, isPaused) {

@@ -1,5 +1,6 @@
 // enemyMovement.js
 import { gameState } from "../utils/utils.js";
+import { getTimeScale } from "./timeStop.js";
 
 export function setupEnemyMovement(k, enemy, movementSpeed) {
   let moveCooldown = k.rand(1, 3);
@@ -10,8 +11,13 @@ export function setupEnemyMovement(k, enemy, movementSpeed) {
   enemy.onUpdate(() => {
     if (gameState.isPaused) return;
 
-    // Reduce cooldown time
-    moveCooldown -= k.dt();
+    // Block all movement when time is fully stopped
+    if (gameState.isTimeStopped) return;
+
+    const timeScale = getTimeScale();
+
+    // Reduce cooldown time (scaled by time)
+    moveCooldown -= k.dt() * timeScale;
 
     if (moveCooldown <= 0) {
       // Randomly determine action: move or stay still
@@ -75,7 +81,7 @@ export function setupEnemyMovement(k, enemy, movementSpeed) {
 
     // Move the enemy only if there's a direction
     if (!moveDirection.eq(k.vec2(0, 0))) {
-      enemy.move(moveDirection.scale(movementSpeed));
+      enemy.move(moveDirection.scale(movementSpeed * timeScale));
     }
   });
 }

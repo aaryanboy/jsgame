@@ -1,9 +1,16 @@
 import { scaleFactor } from "../utils/constants.js";
 import { gameState } from "../utils/utils.js";
 import { calculateDamage } from "../systems/damage.js";
+import { getTimeScale } from "../systems/timeStop.js";
+import { petState } from "../systems/persistentPet.js";
 
-export function createFrog(k, pos, player) {
+export function createFrog(k, pos, player, restoreHealth = false) {
     const maxHealth = 50;
+    // Use stored health if restoring, otherwise use max
+    const startHealth = restoreHealth && petState.currentHealth > 0
+        ? petState.currentHealth
+        : maxHealth;
+
     const frog = k.make([
         k.sprite("pet", { anim: "idle-down" }),
         k.area({ shape: new k.Rect(k.vec2(0, 3), 10, 10) }),
@@ -14,10 +21,23 @@ export function createFrog(k, pos, player) {
         { z: 2 },
         {
             speed: 100, // Faster to catch up
-            health: maxHealth,
+            health: startHealth,
+            maxHealth: maxHealth,
         },
         "frog",
     ]);
+
+    // Store references for revive
+    petState.kaboom = k;
+    petState.player = player;
+    petState.currentPet = frog;
+    petState.isDead = false;
+    petState.shouldPersist = true;
+
+    // Track health changes
+    frog.onUpdate(() => {
+        petState.currentHealth = frog.health;
+    });
 
     // Add Health Bar
     const barWidth = 20;
@@ -48,13 +68,17 @@ export function createFrog(k, pos, player) {
 
         if (!player) return;
 
+        // Block all movement when time is fully stopped
+        if (gameState.isTimeStopped) return;
+
+        const timeScale = getTimeScale();
         const distance = player.pos.dist(frog.pos);
         const followThreshold = 50; // Don't get too close
         const detectRange = 500;   // Only follow if close enough
 
         if (distance > followThreshold && distance < detectRange) {
             const dir = player.pos.sub(frog.pos).unit();
-            frog.move(dir.scale(frog.speed));
+            frog.move(dir.scale(frog.speed * timeScale));
 
             // Animation
             if (Math.abs(dir.y) > Math.abs(dir.x)) {
@@ -87,9 +111,48 @@ export function createFrog(k, pos, player) {
         frog.health -= damageDealt;
 
         if (frog.health <= 0) {
+            // Track death position and state
+            petState.lastDeathPos = frog.pos.clone();
+            petState.isDead = true;
+            petState.currentPet = null;
             k.destroy(frog);
         }
     });
 
     return frog;
+}
+
+/**
+ * Revive the pet at the player's position
+ * @returns {boolean} Whether the pet was successfully revived
+ */
+export function revivePet() {
+    if (!petState.isDead) {
+        console.log("Pet is not dead, no need to revive.");
+        return false;
+    }
+
+    if (!petState.kaboom || !petState.player) {
+        console.log("Cannot revive pet - missing kaboom or player reference.");
+        return false;
+    }
+
+    const k = petState.kaboom;
+    const player = petState.player;
+
+    // Spawn pet near the player
+    const spawnPos = player.pos.add(k.vec2(30, 0));
+    const newPet = createFrog(k, spawnPos, player);
+    k.add(newPet);
+
+    console.log("Pet revived!");
+    return true;
+}
+
+/**
+ * Check if pet is currently dead
+ * @returns {boolean}
+ */
+export function isPetDead() {
+    return petState.isDead;
 }
