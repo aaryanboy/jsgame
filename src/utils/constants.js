@@ -27,9 +27,36 @@ export const playerinfo = {
 
 export const bossInfo = {
   name: "Boss",
-  health: 50,
-  damage: 10,
-  speed: 50,
+  health: 100,
+  damage: 20,
+  speed: 100,
   critRate: 0.1,
   critDamage: 1.2,
+};
+
+export const skills = {
+  q: {
+    name: "Swift Slash",
+    damage: 10,
+    cooldown: 0.5,
+    iconColor: [255, 50, 50], // Bright Red
+  },
+  f: {
+    name: "Titan Cleave",
+    damage: 30,
+    cooldown: 2.0,
+    windup: 0.5,
+    iconColor: [255, 140, 0], // Deep Orange
+  },
+  r: {
+    name: "Blade Storm",
+    damage: 15,
+    cooldown: 3.0,
+    iconColor: [0, 100, 255], // Deep Blue
+  },
+  e: {
+    name: "Chrono Stasis",
+    cooldown: 5.0,
+    iconColor: [147, 112, 219], // Purple
+  },
 };

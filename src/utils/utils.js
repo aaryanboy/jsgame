@@ -57,9 +57,9 @@ export function setGamePause(k, isPaused) {
   gameState.isPaused = isPaused;
   if (gameState.bgm) {
     if (isPaused) {
-      gameState.bgm.pause();
+      if (typeof gameState.bgm.pause === "function") gameState.bgm.pause();
     } else {
-      gameState.bgm.play();
+      if (typeof gameState.bgm.play === "function") gameState.bgm.play();
     }
   }
 }

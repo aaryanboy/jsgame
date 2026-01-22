@@ -1,35 +1,60 @@
 import { setGamePause } from "../utils/utils.js";
 
-let isInventoryOpen = false;
+export function toggleInventory(k) {
+  const noteUI = document.querySelector(".note");
+  const existingInventory = k.get("inventory");
 
-export function openInventory(k) {
-  if (isInventoryOpen) {
+  if (existingInventory.length > 0) {
+    console.log("Closing Inventory...");
     k.destroyAll("inventory");
     setGamePause(k, false);
-    isInventoryOpen = false;
+    if (noteUI) noteUI.style.display = "none";
     return;
   }
 
-  isInventoryOpen = true;
+  console.log("Opening Inventory...");
   setGamePause(k, true);
+  if (noteUI) noteUI.style.display = "flex";
 
-  // Create the inventory UI - centered on screen
-  const inventoryUI = k.add([
-    k.rect(300, 200), // Inventory box size
-    k.pos(k.width() / 2, k.height() / 2), // Center of screen
+  // Full-screen dark overlay
+  k.add([
+    k.rect(k.width(), k.height()),
+    k.pos(0, 0),
+    k.color(0, 0, 0),
+    k.opacity(0.8),
+    k.fixed(),
+    { z: 99 },
+    "inventory"
+  ]);
+
+  // Inventory Text
+  k.add([
+    k.text("INVENTORY", { size: 48, font: "monospace" }),
+    k.pos(k.center().x, k.center().y - 50),
     k.anchor("center"),
-    k.color(0, 0, 0), // Background color
-    k.outline(2, k.rgb(255, 255, 255)), // Outline color (white)
-    "inventory", // Tag to identify the inventory UI
-    k.fixed(), // Make it fixed to screen like the health bar
-    { z: 100 }
+    k.color(255, 255, 255),
+    k.fixed(),
+    { z: 100 },
+    "inventory"
+  ]);
+
+  // Pause Text
+  k.add([
+    k.text("(PAUSED)", { size: 24, font: "monospace" }),
+    k.pos(k.center().x, k.center().y + 50),
+    k.anchor("center"),
+    k.color(200, 200, 200),
+    k.fixed(),
+    { z: 100 },
+    "inventory"
   ]);
 
   // Close inventory on pressing Escape
   const closeHandle = k.onKeyPress("escape", () => {
+    console.log("Closing Inventory via Escape...");
     k.destroyAll("inventory");
     setGamePause(k, false);
-    isInventoryOpen = false;
-    closeHandle.cancel(); // Cancel this specific listener once used
+    if (noteUI) noteUI.style.display = "none";
+    closeHandle.cancel();
   });
 }

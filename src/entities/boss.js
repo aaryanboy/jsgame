@@ -61,8 +61,22 @@ export function setupBossLogic(k, boss, player) {
 
         if (boss.health <= 0) {
             console.log("Boss defeated!");
-            boss.onUpdate = null; // Stop movement logic?
-            boss.destroy();
+            k.destroy(boss);
+
+            // Victory Message
+            k.add([
+                k.text("VICTORY!", { size: 64, font: "monospace" }),
+                k.pos(k.center()),
+                k.anchor("center"),
+                k.color(255, 215, 0), // Gold
+                k.fixed(),
+                { z: 100 }
+            ]);
+
+            // Teleport back to base after delay
+            k.wait(3, () => {
+                k.go("map");
+            });
         }
     });
 }
