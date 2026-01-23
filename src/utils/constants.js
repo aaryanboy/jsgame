@@ -34,28 +34,36 @@ export const bossInfo = {
   critDamage: 1.2,
 };
 
+export const petInfo = {
+  name: "Froggy",
+  health: 500,
+  speed: 100,
+  critRate: 0.05,
+  critDamage: 1.1,
+};
+
 export const skills = {
-  q: {
+  m: {
     name: "Swift Slash",
     damage: 10,
     cooldown: 0.5,
     iconColor: [255, 50, 50], // Bright Red
   },
-  f: {
+  comma: {
     name: "Titan Cleave",
     damage: 30,
     cooldown: 2.0,
     windup: 0.5,
     iconColor: [255, 140, 0], // Deep Orange
   },
-  r: {
+  period: {
     name: "Blade Storm",
     damage: 15,
     cooldown: 3.0,
     iconColor: [0, 100, 255], // Deep Blue
   },
-  e: {
-    name: "Chrono Stasis",
+  slash: {
+    name: "The World",
     cooldown: 5.0,
     iconColor: [147, 112, 219], // Purple
   },

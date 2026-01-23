@@ -63,5 +63,9 @@ export function loadAssets(k) {
     // Load Music
     k.loadSound("bgm", "/music/backgroundmusic.mp3");
 
+    // Load Attack Sounds
+    k.loadSound("zawarudo", "/attackmusic/za-warudo-dio-the-world.mp3");
+    k.loadSound("shield", "/attackmusic/shield.mp3");
+
     k.setBackground(k.Color.fromHex("#311047"));
 }

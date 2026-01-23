@@ -1,9 +1,11 @@
-import { scaleFactor, playerinfo, skills } from "../utils/constants.js";
+import { scaleFactor, skills, playerinfo } from "../utils/constants.js";
 import { gameState } from "../utils/utils.js";
 import { toggleInventory } from "../systems/inventory.js";
-import { calculateDamage } from "../systems/damage.js";
 import { toggleTimeStop, getTimeScale } from "../systems/timeStop.js";
 import { revivePet, isPetDead } from "./frog.js";
+import { createHealthBar } from "../ui/healthBar.js";
+import { createSkillBar } from "../ui/skillBar.js";
+import { createAudioToggle } from "../ui/audioToggle.js";
 
 export function createPlayer(k) {
     const player = k.make([
@@ -15,17 +17,17 @@ export function createPlayer(k) {
         k.scale(scaleFactor),
         { z: 2 },
         {
-            speed: 200,
-            direction: "down",
-            isInDialogue: false,
-            health: 100,
-            damage: 10,
-            critRate: 0,
-            critDamage: 0,
-            qTimer: 0,
-            fTimer: 0,
-            rTimer: 0,
-            eTimer: 0,
+            speed: playerinfo.speed,
+            direction: playerinfo.direction,
+            isInDialogue: playerinfo.isInDialogue,
+            health: playerinfo.health,
+            damage: playerinfo.damage,
+            critRate: playerinfo.critRate,
+            critDamage: playerinfo.critDamage,
+            mTimer: 0,
+            commaTimer: 0,
+            periodTimer: 0,
+            slashTimer: 0,
         },
         "player",
     ]);
@@ -34,123 +36,17 @@ export function createPlayer(k) {
 }
 
 export function setPlayerControls(k, player) {
-    // --- HEALTH BAR UI ---
-    const totalHealth = 100;
-    const barWidth = 200;
-    const barHeight = 20;
-
-    const healthContainer = k.add([
-        k.pos(k.width() - 300, 20),
-        k.fixed(),
-        { z: 100 }
-    ]);
-    healthContainer.add([k.text("HP", { size: 24, font: "monospace" }), k.pos(0, -5), k.color(255, 255, 255)]);
-    healthContainer.add([k.rect(barWidth, barHeight), k.pos(40, 0), k.color(50, 50, 50), k.outline(2, k.Color.WHITE)]);
-    const healthBar = healthContainer.add([k.rect(barWidth, barHeight), k.pos(40, 0), k.color(0, 255, 0)]);
-    const hpText = healthContainer.add([k.text("100/100", { size: 16, font: "monospace" }), k.pos(40 + barWidth / 2, barHeight / 2), k.anchor("center"), k.color(255, 255, 255)]);
-
-    healthBar.onUpdate(() => {
-        const ratio = player.health / totalHealth;
-        healthBar.width = barWidth * Math.max(0, ratio);
-        hpText.text = `${Math.ceil(player.health)}/${totalHealth}`;
-        if (ratio < 0.3) healthBar.color = k.rgb(255, 0, 0);
-        else if (ratio < 0.6) healthBar.color = k.rgb(255, 165, 0);
-        else healthBar.color = k.rgb(0, 255, 0);
-    });
-
-    // --- SKILL BAR UI ---
-    const iconSize = 50;
-    const spacing = 15;
-    const skillKeys = ['q', 'f', 'r', 'e'];
-    const skillData = [skills.q, skills.f, skills.r, skills.e];
-    const totalWidth = skillKeys.length * (iconSize + spacing) + spacing;
-    const startX = k.width() / 2 - totalWidth / 2;
-    const skillBarY = k.height() - 80;
-
-    // Background Container
-    k.add([
-        k.rect(totalWidth, iconSize + 20, { radius: 8 }),
-        k.pos(startX - spacing, skillBarY - 10),
-        k.color(20, 20, 20),
-        k.opacity(0.8),
-        k.fixed(),
-        k.outline(2, k.rgb(100, 100, 100)),
-        { z: 90 }
-    ]);
-
-    skillKeys.forEach((key, index) => {
-        const x = startX + index * (iconSize + spacing);
-        const skill = skillData[index];
-        const color = k.rgb(...skill.iconColor);
-
-        const container = k.add([
-            k.pos(x, skillBarY),
-            k.fixed(),
-            { z: 100 }
-        ]);
-
-        container.add([
-            k.rect(iconSize, iconSize, { radius: 4 }),
-            k.color(color),
-            k.outline(2, k.Color.WHITE)
-        ]);
-
-        container.add([
-            k.text(key.toUpperCase(), { size: 16, font: "monospace" }),
-            k.pos(4, 4),
-            k.color(255, 255, 255),
-            k.outline(1, k.Color.BLACK)
-        ]);
-
-        container.add([
-            k.text(skill.name, { size: 10, font: "monospace", width: iconSize, align: "center" }),
-            k.pos(iconSize / 2, iconSize + 5),
-            k.anchor("top"),
-            k.color(200, 200, 200)
-        ]);
-
-        const overlay = container.add([
-            k.rect(iconSize, iconSize, { radius: 4 }),
-            k.color(0, 0, 0),
-            k.opacity(0.7),
-            k.pos(0, 0)
-        ]);
-
-        const cdText = container.add([
-            k.text("", { size: 20, font: "monospace" }),
-            k.pos(iconSize / 2, iconSize / 2),
-            k.anchor("center"),
-            k.color(255, 255, 255)
-        ]);
-
-        container.onUpdate(() => {
-            const timer = player[`${key}Timer`];
-            if (key === 'e' && gameState.isTimeStopped) {
-                overlay.height = 0;
-                overlay.opacity = 0;
-                return;
-            }
-
-            if (timer > 0) {
-                const totalCD = skill.cooldown;
-                const ratio = timer / totalCD;
-                overlay.opacity = 0.8;
-                overlay.height = iconSize * ratio;
-                cdText.text = timer.toFixed(1);
-            } else {
-                overlay.opacity = 0;
-                overlay.height = 0;
-                cdText.text = "";
-            }
-        });
-    });
+    // --- UI COMPONENTS (modular) ---
+    createHealthBar(k, player);
+    createSkillBar(k, player);
+    createAudioToggle(k, player);
 
     // --- GAME LOOP UPDATE ---
     k.onUpdate(() => {
-        if (player.qTimer > 0) player.qTimer -= k.dt();
-        if (player.fTimer > 0) player.fTimer -= k.dt();
-        if (player.rTimer > 0) player.rTimer -= k.dt();
-        if (player.eTimer > 0) player.eTimer -= k.dt();
+        if (player.mTimer > 0) player.mTimer -= k.dt();
+        if (player.commaTimer > 0) player.commaTimer -= k.dt();
+        if (player.periodTimer > 0) player.periodTimer -= k.dt();
+        if (player.slashTimer > 0) player.slashTimer -= k.dt();
 
         if (player.health <= 0) {
             k.go("gameover");
@@ -159,10 +55,11 @@ export function setPlayerControls(k, player) {
 
         k.camPos(player.pos.x, player.pos.y + 100);
 
-        if (gameState.isPaused || gameState.isTimeStopped || player.isInDialogue) return;
+        // Player can still move during time stop - only pause and dialogue block movement
+        if (gameState.isPaused || player.isInDialogue) return;
 
-        const timeScale = getTimeScale();
-        const speed = player.speed * timeScale;
+        // Player speed is affected by time scale (slows down and stops)
+        const speed = player.speed * getTimeScale();
         let dx = 0; let dy = 0;
 
         if (k.isKeyDown("left") || k.isKeyDown("a")) dx = -1;
@@ -198,31 +95,34 @@ export function setPlayerControls(k, player) {
 
     // --- CONTROLS ---
 
-    // Q: Swift Slash
-    const qListener = k.onKeyPress("q", () => {
-        if (gameState.isPaused || player.isInDialogue || player.qTimer > 0) return;
-        player.qTimer = skills.q.cooldown;
-        performAttack(k, player, "slash", skills.q.damage);
+    // M: Swift Slash
+    const mListener = k.onKeyPress("m", () => {
+        if (gameState.isPaused || player.isInDialogue || player.mTimer > 0) return;
+        player.mTimer = skills.m.cooldown;
+        performAttack(k, player, "slash", skills.m.damage);
     });
-    player.onDestroy(() => qListener.cancel());
+    player.onDestroy(() => mListener.cancel());
 
-    // F: Titan Cleave
-    const fListener = k.onKeyPress("f", () => {
-        if (gameState.isPaused || player.isInDialogue || player.fTimer > 0) return;
-        player.fTimer = skills.f.cooldown;
+    // , (Comma): Titan Cleave
+    const commaListener = k.onKeyPress(",", () => {
+        if (gameState.isPaused || player.isInDialogue || player.commaTimer > 0) return;
+        player.commaTimer = skills.comma.cooldown;
 
         player.color = k.rgb(255, 140, 0);
-        k.wait(skills.f.windup, () => {
+        k.wait(skills.comma.windup, () => {
             player.color = k.rgb(255, 255, 255);
-            performAttack(k, player, "heavy", skills.f.damage);
+            performAttack(k, player, "heavy", skills.comma.damage);
         });
     });
-    player.onDestroy(() => fListener.cancel());
+    player.onDestroy(() => commaListener.cancel());
 
-    // R: Blade Storm
-    const rListener = k.onKeyPress("r", () => {
-        if (gameState.isPaused || player.isInDialogue || player.rTimer > 0) return;
-        player.rTimer = skills.r.cooldown;
+    // . (Period): Blade Storm
+    const periodListener = k.onKeyPress(".", () => {
+        if (gameState.isPaused || player.isInDialogue || player.periodTimer > 0) return;
+        player.periodTimer = skills.period.cooldown;
+
+        // Play shield sound
+        k.play("shield", { volume: 0.5 });
 
         const spin = k.add([
             k.circle(50),
@@ -232,25 +132,28 @@ export function setPlayerControls(k, player) {
             k.opacity(0.5),
             k.area(),
             "attack",
-            { damage: skills.r.damage }
+            { damage: player.damage + skills.period.damage }
         ]);
         k.wait(0.2, () => k.destroy(spin));
     });
-    player.onDestroy(() => rListener.cancel());
+    player.onDestroy(() => periodListener.cancel());
 
-    // E: Chrono Stasis
-    const timeStopListener = k.onKeyPress("e", () => {
+    // / (Slash): Chrono Stasis - "The World"
+    const slashListener = k.onKeyPress("/", () => {
         if (player.isInDialogue) return;
+        if (gameState.isTimeStopped) return; // Can't use while already active
+        if (player.slashTimer > 0) return; // Cooldown check
 
-        if (gameState.isTimeStopped) {
-            toggleTimeStop(k);
-            player.eTimer = skills.e.cooldown;
-        } else {
-            if (player.eTimer > 0) return;
-            toggleTimeStop(k);
-        }
+        // Play ZA WARUDO sound
+        k.play("zawarudo", { volume: 0.7 });
+
+        // Start cooldown immediately upon activation
+        player.slashTimer = skills.slash.cooldown;
+
+        // Activate time stop (will auto-resume after 5 seconds)
+        toggleTimeStop(k);
     });
-    player.onDestroy(() => timeStopListener.cancel());
+    player.onDestroy(() => slashListener.cancel());
 
 
     function performAttack(k, player, type, damage) {
@@ -273,7 +176,7 @@ export function setPlayerControls(k, player) {
             k.area(),
             { z: 6 },
             "attack",
-            { damage: damage }
+            { damage: player.damage + damage }
         ]);
         attackSprite.flipX = flipX;
 

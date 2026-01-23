@@ -5,6 +5,7 @@ import { createBoss, setupBossLogic } from "../entities/boss.js";
 import { setupEnemyMovement } from "../systems/enemyMovement.js";
 import { createFrog } from "../entities/frog.js";
 import { petState, spawnPetInNewRoom, checkPetTransition } from "../systems/persistentPet.js";
+import { createDamageBox } from "../ui/damageBox.js";
 
 export const roomData = {
     main: {
@@ -135,6 +136,7 @@ export function loadRoom(k, roomName, spawnPoint = "player") {
 
                     // Attempt to spawn persistent pet (pass createFrog as dependency)
                     persistentPet = spawnPetInNewRoom(k, player, createFrog);
+                    createDamageBox(k);
                 }
 
                 // Now handle other spawn entities

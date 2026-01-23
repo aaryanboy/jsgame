@@ -1,6 +1,6 @@
 import { scaleFactor } from "../utils/constants.js";
 import { setupBossAI } from "../systems/bossAI.js";
-import { calculateDamage } from "../systems/damage.js";
+import { calculateDamage, isLastHitCritical } from "../systems/damage.js";
 
 export function createBoss(k) {
     const boss = k.make([
@@ -50,14 +50,15 @@ export function setupBossLogic(k, boss, player) {
     setupBossAI(k, boss, player);
 
     // Collision/Combat logic
-    k.onCollide("attack", "boss", () => {
+    k.onCollide("attack", "boss", (attack) => {
         console.log("You hit the boss!");
         let totalDamage = calculateDamage(
-            player.damage,
+            attack.damage,
             player.critDamage,
             player.critRate
         );
         boss.health -= totalDamage;
+        k.get("damageBox").forEach(b => b.trigger("showDamage", totalDamage, isLastHitCritical()));
 
         if (boss.health <= 0) {
             console.log("Boss defeated!");

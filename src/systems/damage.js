@@ -1,16 +1,20 @@
-// damageCalculation.js
+let lastHitCrit = false;
 
 // Function to calculate total damage with random chance for critical hit
 export function calculateDamage(dmg, critdmg, critrate) {
-  let chance = Math.floor(Math.random() * 101);
-  const isCriticalHit = chance < critrate;
+  // critrate is 0.2 (20%), so we multiply by 100 to compare with random 1-100
+  let chance = Math.floor(Math.random() * 100) + 1;
+  const isCriticalHit = chance <= (critrate * 100);
+  lastHitCrit = isCriticalHit;
 
-  // Calculate damage based on whether it's a critical hit or not
   if (isCriticalHit) {
-    const critDamage = dmg * critdmg;
-
-    return critDamage;
+    console.log("CRITICAL HIT!");
+    return Math.floor(dmg * critdmg);
   } else {
-    return dmg;
+    return Math.floor(dmg);
   }
+}
+
+export function isLastHitCritical() {
+  return lastHitCrit;
 }

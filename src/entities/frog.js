@@ -1,15 +1,14 @@
-import { scaleFactor } from "../utils/constants.js";
+import { scaleFactor, petInfo } from "../utils/constants.js";
 import { gameState } from "../utils/utils.js";
-import { calculateDamage } from "../systems/damage.js";
+import { calculateDamage, isLastHitCritical } from "../systems/damage.js";
 import { getTimeScale } from "../systems/timeStop.js";
 import { petState } from "../systems/persistentPet.js";
 
 export function createFrog(k, pos, player, restoreHealth = false) {
-    const maxHealth = 50;
     // Use stored health if restoring, otherwise use max
     const startHealth = restoreHealth && petState.currentHealth > 0
         ? petState.currentHealth
-        : maxHealth;
+        : petInfo.health;
 
     const frog = k.make([
         k.sprite("pet", { anim: "idle-down" }),
@@ -20,9 +19,11 @@ export function createFrog(k, pos, player, restoreHealth = false) {
         k.scale(scaleFactor * 0.5),
         { z: 2 },
         {
-            speed: 100, // Faster to catch up
+            speed: petInfo.speed,
             health: startHealth,
-            maxHealth: maxHealth,
+            maxHealth: petInfo.health,
+            critRate: petInfo.critRate,
+            critDamage: petInfo.critDamage,
         },
         "frog",
     ]);
@@ -59,7 +60,7 @@ export function createFrog(k, pos, player, restoreHealth = false) {
 
     // Update HP Bar
     hpBar.onUpdate(() => {
-        hpBar.width = barWidth * (frog.health / maxHealth);
+        hpBar.width = barWidth * (frog.health / petInfo.health);
     });
 
 
@@ -100,15 +101,15 @@ export function createFrog(k, pos, player, restoreHealth = false) {
     });
 
     // Collision/Combat Logic
-    frog.onCollide("attack", () => {
+    frog.onCollide("attack", (attack) => {
         // Calculate Damage
         const damageDealt = calculateDamage(
-            player.damage,
+            attack.damage,
             player.critDamage,
             player.critRate
         );
-
         frog.health -= damageDealt;
+        k.get("damageBox").forEach(b => b.trigger("showDamage", damageDealt, isLastHitCritical()));
 
         if (frog.health <= 0) {
             // Track death position and state
