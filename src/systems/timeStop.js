@@ -184,3 +184,13 @@ function easeInQuad(t) {
 function easeOutQuad(t) {
     return 1 - (1 - t) * (1 - t);
 }
+
+// Reset time stop state (used when switching rooms)
+export function resetTimeStop() {
+    internalTimeScale = 1.0;
+    isSlowingDown = false;
+    isResuming = false;
+    transitionProgress = 0;
+    gameState.isTimeStopped = false;
+    console.log("⏱️ TIME STOP RESET");
+}

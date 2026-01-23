@@ -6,6 +6,7 @@ import { setupEnemyMovement } from "../systems/enemyMovement.js";
 import { createFrog } from "../entities/frog.js";
 import { petState, spawnPetInNewRoom, checkPetTransition } from "../systems/persistentPet.js";
 import { createDamageBox } from "../ui/damageBox.js";
+import { resetTimeStop } from "../systems/timeStop.js";
 
 export const roomData = {
     main: {
@@ -35,6 +36,9 @@ let nextSpawnPoint = "player";
 
 export function loadRoom(k, roomName, spawnPoint = "player") {
     k.scene(roomName, async () => {
+        // Reset time stop state immediately on room load
+        resetTimeStop();
+
         // Use the tracked spawn point for this scene
         const currentSpawnPoint = nextSpawnPoint;
         nextSpawnPoint = "player"; // Reset for next load
