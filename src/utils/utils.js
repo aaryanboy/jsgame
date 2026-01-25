@@ -55,11 +55,4 @@ export const gameState = {
 
 export function setGamePause(k, isPaused) {
   gameState.isPaused = isPaused;
-  if (gameState.bgm) {
-    if (isPaused) {
-      if (typeof gameState.bgm.pause === "function") gameState.bgm.pause();
-    } else {
-      if (typeof gameState.bgm.play === "function") gameState.bgm.play();
-    }
-  }
 }
