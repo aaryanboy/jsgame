@@ -22,8 +22,11 @@ export function createFrog(k, pos, player, restoreHealth = false) {
             speed: petInfo.speed,
             health: startHealth,
             maxHealth: petInfo.health,
+            damage: petInfo.damage,
             critRate: petInfo.critRate,
             critDamage: petInfo.critDamage,
+            direction: "down",
+            attackTimer: 0,
         },
         "frog",
     ]);
@@ -34,6 +37,45 @@ export function createFrog(k, pos, player, restoreHealth = false) {
     petState.currentPet = frog;
     petState.isDead = false;
     petState.shouldPersist = true;
+
+    // Helper for Frog Attack (Sword Style)
+    function performPetAttack(targetPos) {
+        if (frog.attackTimer > 0) return;
+
+        // Determine direction based on target position
+        const diff = targetPos.sub(frog.pos);
+        if (Math.abs(diff.x) > Math.abs(diff.y)) {
+            frog.direction = diff.x > 0 ? "right" : "left";
+        } else {
+            frog.direction = diff.y > 0 ? "down" : "up";
+        }
+
+        let offset = k.vec2(0, 0);
+        let anim = "";
+        let flipX = false;
+
+        switch (frog.direction) {
+            case "up": offset = k.vec2(0, -12); anim = "attack-up"; break;
+            case "down": offset = k.vec2(0, 12); anim = "attack-down"; break;
+            case "left": offset = k.vec2(-24, 0); anim = "attack-left"; flipX = true; break;
+            case "right": offset = k.vec2(24, 0); anim = "attack-left"; flipX = false; break;
+        }
+
+        const attackSprite = k.add([
+            k.sprite("attack", { anim: anim }),
+            k.pos(frog.pos.add(offset)),
+            k.anchor("center"),
+            k.scale(scaleFactor * 0.4), // Smaller for the frog
+            k.area(),
+            { z: 6 },
+            "attack",
+            { damage: frog.damage } // Use damage from petInfo
+        ]);
+        attackSprite.flipX = flipX;
+
+        frog.attackTimer = 1.0; // 1 second cooldown
+        k.wait(0.3, () => k.destroy(attackSprite));
+    }
 
     // Track health changes
     frog.onUpdate(() => {
@@ -66,13 +108,52 @@ export function createFrog(k, pos, player, restoreHealth = false) {
 
     frog.onUpdate(() => {
         if (gameState.isPaused) return;
-
         if (!player) return;
+
+        // Tick attack timer
+        if (frog.attackTimer > 0) frog.attackTimer -= k.dt();
 
         // Block all movement when time is fully stopped
         if (gameState.isTimeStopped) return;
 
         const timeScale = getTimeScale();
+
+        // COMBAT LOGIC: Search for Boss
+        const bosses = k.get("boss");
+        let targetEnemy = null;
+        if (bosses.length > 0) {
+            const boss = bosses[0];
+            if (frog.pos.dist(boss.pos) < 400) {
+                targetEnemy = boss;
+            }
+        }
+
+        if (targetEnemy) {
+            const dist = frog.pos.dist(targetEnemy.pos);
+            const attackRange = 50;
+
+            if (dist > attackRange) {
+                // Move towards enemy
+                const dir = targetEnemy.pos.sub(frog.pos).unit();
+                frog.move(dir.scale(frog.speed * timeScale));
+
+                // Direction for animation
+                if (Math.abs(dir.y) > Math.abs(dir.x)) {
+                    const anim = dir.y > 0 ? "walk-down" : "walk-up";
+                    if (frog.curAnim() !== anim) frog.play(anim);
+                } else {
+                    const anim = dir.x > 0 ? "walk-right" : "walk-left";
+                    if (frog.curAnim() !== anim) frog.play(anim);
+                }
+            } else {
+                // In range! Attack
+                frog.play("idle-down");
+                performPetAttack(targetEnemy.pos);
+            }
+            return; // Don't follow player while fighting
+        }
+
+        // DEFAULT LOGIC: Follow Player
         const distance = player.pos.dist(frog.pos);
         const followThreshold = 50; // Don't get too close
         const detectRange = 500;   // Only follow if close enough
@@ -84,15 +165,19 @@ export function createFrog(k, pos, player, restoreHealth = false) {
             // Animation
             if (Math.abs(dir.y) > Math.abs(dir.x)) {
                 if (dir.y > 0) {
-                    frog.play("walk-down");
+                    if (frog.curAnim() !== "walk-down") frog.play("walk-down");
+                    frog.direction = "down";
                 } else {
-                    frog.play("walk-up");
+                    if (frog.curAnim() !== "walk-up") frog.play("walk-up");
+                    frog.direction = "up";
                 }
             } else {
                 if (dir.x > 0) {
-                    frog.play("walk-right");
+                    if (frog.curAnim() !== "walk-right") frog.play("walk-right");
+                    frog.direction = "right";
                 } else {
-                    frog.play("walk-left");
+                    if (frog.curAnim() !== "walk-left") frog.play("walk-left");
+                    frog.direction = "left";
                 }
             }
         } else {

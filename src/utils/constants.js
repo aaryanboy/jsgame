@@ -37,7 +37,8 @@ export const bossInfo = {
 export const petInfo = {
   name: "Froggy",
   health: 500,
-  speed: 270,
+  speed: 200,
+  damage: 20,
   critRate: 0.05,
   critDamage: 1.1,
 };
