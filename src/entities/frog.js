@@ -128,25 +128,35 @@ export function createFrog(k, pos, player, restoreHealth = false) {
  * @returns {boolean} Whether the pet was successfully revived
  */
 export function revivePet() {
-    if (!petState.isDead) {
-        console.log("Pet is not dead, no need to revive.");
-        return false;
-    }
-
     if (!petState.kaboom || !petState.player) {
-        console.log("Cannot revive pet - missing kaboom or player reference.");
+        console.log("Cannot revive/summon pet - missing kaboom or player reference.");
         return false;
     }
 
     const k = petState.kaboom;
     const player = petState.player;
 
+    // If the pet is already alive and in this room, don't do anything
+    if (petState.currentPet && !petState.isDead) {
+        console.log("Pet is already alive and with you.");
+        return false;
+    }
+
+    // If there's an existing pet instance (e.g. it was dead in this room), destroy it before re-spawning
+    if (petState.currentPet) {
+        k.destroy(petState.currentPet);
+    }
+
+    // Reset state to ensure it spawns and persists
+    petState.isDead = false;
+    petState.shouldPersist = true;
+
     // Spawn pet near the player
     const spawnPos = player.pos.add(k.vec2(30, 0));
     const newPet = createFrog(k, spawnPos, player);
     k.add(newPet);
 
-    console.log("Pet revived!");
+    console.log("Pet summoned beside player!");
     return true;
 }
 

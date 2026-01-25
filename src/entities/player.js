@@ -192,7 +192,7 @@ export function setPlayerControls(k, player) {
         if (player.isInDialogue || gameState.isPaused) return;
         const tvObjects = k.get("tv");
         let nearTV = tvObjects.some(tv => player.pos.dist(tv.pos) < 50);
-        if (nearTV && isPetDead()) revivePet();
+        if (nearTV) revivePet();
     });
     player.onDestroy(() => reviveListener.cancel());
 }

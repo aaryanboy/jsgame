@@ -136,6 +136,13 @@ export function loadRoom(k, roomName, spawnPoint = "player") {
                         player.pos = playerSpawnPos;
                     }
                     k.add(player);
+
+                    // Sync pet state global references for the new room
+                    petState.kaboom = k;
+                    petState.player = player;
+                    // Reset currentPet reference for the new room since old objects are destroyed
+                    petState.currentPet = null;
+
                     setPlayerControls(k, player);
 
                     // Attempt to spawn persistent pet (pass createFrog as dependency)
