@@ -5,7 +5,6 @@ import { toggleTimeStop, getTimeScale } from "../systems/timeStop.js";
 import { revivePet, isPetDead } from "./frog.js";
 import { createHealthBar } from "../ui/healthBar.js";
 import { createSkillBar } from "../ui/skillBar.js";
-import { createAudioToggle } from "../ui/audioToggle.js";
 
 export function createPlayer(k) {
     const player = k.make([
@@ -39,7 +38,6 @@ export function setPlayerControls(k, player) {
     // --- UI COMPONENTS (modular) ---
     createHealthBar(k, player);
     createSkillBar(k, player);
-    createAudioToggle(k, player);
 
     // --- GAME LOOP UPDATE ---
     k.onUpdate(() => {
