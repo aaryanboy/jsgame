@@ -110,12 +110,13 @@ function openMenu(k) {
   menuItems = [
     { type: "toggle", label: "Music", key: "music", value: musicIsOn },
     { type: "btn", label: "Controls", color: "blue", action: "controls" },
+    { type: "btn", label: "Change Skin 👕", color: "purple", action: "skin" },
     { type: "btn", label: "Creative Mode 🎨", color: "purple", action: "creative" },
     { type: "btn", label: "Resume Game", color: "green", action: "resume" },
     { type: "btn", label: "Restart Game", color: "red", action: "restart" },
   ];
 
-  const itemW = pw - 70, itemH = 46, gap = 12;
+  const itemW = pw - 70, itemH = 46, gap = 8;
   const itemX = px + 35, startY = py + 92;
   toggleRefs = {};
 
@@ -220,6 +221,7 @@ function activate(k) {
   switch (item.action) {
     case "resume": closeMenu(k); break;
     case "controls": showControlsPanel(k); break;
+    case "skin": showSkinPanel(k); break;
     case "creative": showCreativePanel(k); break;
     case "restart":
       // Stop existing BGM cleanly before restarting
@@ -281,6 +283,116 @@ function showControlsPanel(k) {
   });
 
   buildBackButton(k, px + pw / 2 - 100, py + ph - 52);
+}
+
+// ── Skin Selection Panel ──
+function showSkinPanel(k) {
+  subPanelOpen = true;
+
+  const pw = 360, ph = 400;
+  const px = (k.width() - pw) / 2, py = (k.height() - ph) / 2;
+
+  // Glow
+  addFx(k, 108, "settingsMenu", "subPanel",
+    k.rect(pw + 20, ph + 20, { radius: 18 }), k.pos(px - 10, py - 10),
+    k.color(...C.purpleFace), k.opacity(0.18));
+
+  addFx(k, 109, "settingsMenu", "subPanel",
+    k.rect(pw + 4, ph + 6, { radius: 14 }), k.pos(px, py + 4),
+    k.color(...C.shadow), k.opacity(0.4));
+  addFx(k, 110, "settingsMenu", "subPanel",
+    k.rect(pw, ph, { radius: 12 }), k.pos(px, py),
+    k.color(...C.panelBg), k.outline(4, k.rgb(...C.panelBorder)));
+  addFx(k, 110, "settingsMenu", "subPanel",
+    k.rect(pw - 20, ph - 20, { radius: 8 }), k.pos(px + 10, py + 10),
+    k.color(...C.panelInner), k.outline(2, k.rgb(...C.separator)));
+
+  addFx(k, 111, "settingsMenu", "subPanel",
+    k.text("SELECT SKIN", { size: 28, font: "monospace" }),
+    k.pos(px + pw / 2, py + 36), k.anchor("center"), k.color(...C.title));
+
+  const SUBTITLES = [
+    "Purple Knight", "Green Knight", "Gold Knight", "Red Knight",
+    "Purple Mage", "Green Mage", "Gold Mage", "Red Mage"
+  ];
+
+  let tempSkin = gameConfig.player.skinIndex;
+
+  const subLabel = addFx(k, 111, "settingsMenu", "subPanel",
+    k.text(SUBTITLES[tempSkin], { size: 16, font: "monospace" }),
+    k.pos(px + pw / 2, py + 64), k.anchor("center"), k.color(...C.title), k.opacity(0.7));
+
+  addFx(k, 111, "settingsMenu", "subPanel",
+    k.rect(pw - 100, 2), k.pos(px + 50, py + 84),
+    k.color(...C.panelBorder), k.opacity(0.5));
+
+  // Skin Preview
+  const previewBox = addFx(k, 111, "settingsMenu", "subPanel",
+    k.rect(120, 120, { radius: 8 }), k.pos(px + pw / 2, py + 164), k.anchor("center"),
+    k.color(...C.itemBg), k.outline(2, k.rgb(...C.panelBorder)));
+
+  const spritePreview = addFx(k, 112, "settingsMenu", "subPanel", "previewSprite",
+    k.sprite(`skin_${tempSkin}`, { anim: "walk-down" }),
+    k.pos(px + pw / 2, py + 164), k.anchor("center"), k.scale(5));
+
+  // Left Arrow
+  const lBtnShadow = addFx(k, 112, "settingsMenu", "subPanel",
+    k.rect(40, 40, { radius: 8 }), k.pos(px + 40 + 2, py + 144 + 4), k.color(...C.blueShad));
+  const lBtn = addFx(k, 113, "settingsMenu", "subPanel",
+    k.rect(40, 40, { radius: 8 }), k.area(), k.pos(px + 40, py + 144),
+    k.color(...C.blueFace), k.outline(2, k.rgb(...C.panelBorder)));
+  addFx(k, 114, "settingsMenu", "subPanel",
+    k.text("◀", { size: 18 }), k.pos(px + 60, py + 164), k.anchor("center"), k.color(...C.white));
+
+  // Right Arrow
+  const rBtnShadow = addFx(k, 112, "settingsMenu", "subPanel",
+    k.rect(40, 40, { radius: 8 }), k.pos(px + pw - 80 + 2, py + 144 + 4), k.color(...C.blueShad));
+  const rBtn = addFx(k, 113, "settingsMenu", "subPanel",
+    k.rect(40, 40, { radius: 8 }), k.area(), k.pos(px + pw - 80, py + 144),
+    k.color(...C.blueFace), k.outline(2, k.rgb(...C.panelBorder)));
+  addFx(k, 114, "settingsMenu", "subPanel",
+    k.text("▶", { size: 18 }), k.pos(px + pw - 60, py + 164), k.anchor("center"), k.color(...C.white));
+
+  function updateSkin(dir) {
+    tempSkin = (tempSkin + dir + 8) % 8;
+    subLabel.text = SUBTITLES[tempSkin];
+    spritePreview.use(k.sprite(`skin_${tempSkin}`, { anim: "walk-down" }));
+  }
+
+  [lBtn, rBtn].forEach(btn => {
+    btn.onHoverUpdate(() => { document.body.style.cursor = "pointer"; });
+    btn.onHoverEnd(() => { document.body.style.cursor = "default"; });
+  });
+
+  lBtn.onClick(() => updateSkin(-1));
+  rBtn.onClick(() => updateSkin(1));
+
+  // Action Buttons row
+  const btnY = py + ph - 90;
+
+  // Apply Button
+  addFx(k, 112, "settingsMenu", "subPanel",
+    k.rect(140, 36, { radius: 7 }), k.pos(px + 30 + 2, btnY + 4), k.color(...C.purpleShad));
+  const applyBtn = addFx(k, 113, "settingsMenu", "subPanel",
+    k.rect(140, 36, { radius: 7 }), k.area(), k.pos(px + 30, btnY),
+    k.color(...C.purpleFace), k.outline(2, k.rgb(...C.panelBorder)));
+  addFx(k, 114, "settingsMenu", "subPanel",
+    k.text("Apply Skin", { size: 16, font: "monospace" }),
+    k.pos(px + 100, btnY + 18), k.anchor("center"), k.color(...C.white));
+
+  applyBtn.onHoverUpdate(() => { document.body.style.cursor = "pointer"; });
+  applyBtn.onHoverEnd(() => { document.body.style.cursor = "default"; });
+  applyBtn.onClick(() => {
+    gameConfig.player.skinIndex = tempSkin;
+    k.get("player").forEach(p => {
+      p.use(k.sprite(`skin_${tempSkin}`, { anim: "idle-down" }));
+    });
+    // Visual pop to confirm
+    spritePreview.scale = k.vec2(6);
+    k.wait(0.1, () => { spritePreview.scale = k.vec2(5); });
+  });
+
+  buildBackButton(k, px + pw - 170, btnY + 3); // Slightly shifted back btn
 }
 
 // ── Creative Mode panel ──

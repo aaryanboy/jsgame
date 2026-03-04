@@ -1,5 +1,36 @@
 export function loadAssets(k) {
-    // Load sprites
+    // ── Player skin definitions ──
+    // Each skin: [startCol, framesPerDir]  — rows 24/25/26
+    const SKIN_DEFS = [
+        [0, 4], // skin_0  — Purple Knight (default)
+        [4, 4], // skin_1  — Green Knight
+        [8, 4], // skin_2  — Gold Knight
+        [12, 4], // skin_3  — Red Knight
+        [16, 2], // skin_4  — Brown Mage
+        [20, 2], // skin_5  — Yellow Mage
+        [24, 2], // skin_6  — Gold Mage
+        [28, 2], // skin_7  — Red Mage
+    ];
+
+    SKIN_DEFS.forEach(([col, frames], i) => {
+        const d = 24 * 39 + col; // row 24 = walk-down
+        const s = 25 * 39 + col; // row 25 = walk-side
+        const u = 26 * 39 + col; // row 26 = walk-up
+        const end = frames - 1;
+        k.loadSprite(`skin_${i}`, "./spritesheet.png", {
+            sliceX: 39, sliceY: 31,
+            anims: {
+                "idle-down": d,
+                "walk-down": { from: d, to: d + end, loop: true, speed: 8 },
+                "idle-side": s,
+                "walk-side": { from: s, to: s + end, loop: true, speed: 8 },
+                "idle-up": u,
+                "walk-up": { from: u, to: u + end, loop: true, speed: 8 },
+            },
+        });
+    });
+
+    // Default "spritesheet" sprite is skin_0 (backwards compat)
     k.loadSprite("spritesheet", "./spritesheet.png", {
         sliceX: 39,
         sliceY: 31,

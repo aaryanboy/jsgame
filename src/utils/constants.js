@@ -21,6 +21,7 @@ export const gameConfig = {
     damage: 10,
     critRate: 0.2,   // 0–1
     critDamage: 1.5,   // multiplier
+    skinIndex: 0,
   },
   boss: {
     health: 100,

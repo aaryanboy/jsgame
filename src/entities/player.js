@@ -5,10 +5,12 @@ import { toggleTimeStop, getTimeScale } from "../systems/timeStop.js";
 import { revivePet, isPetDead } from "./frog.js";
 import { createHealthBar } from "../ui/healthBar.js";
 import { createSkillBar } from "../ui/skillBar.js";
+import { gameConfig } from "../utils/constants.js";
 
 export function createPlayer(k) {
+    const skinSprite = `skin_${gameConfig.player.skinIndex}`;
     const player = k.make([
-        k.sprite("spritesheet", { anim: "idle-down" }),
+        k.sprite(skinSprite, { anim: "idle-down" }),
         k.area({ shape: new k.Rect(k.vec2(0, 3), 10, 10) }),
         k.body(),
         k.anchor("center"),
