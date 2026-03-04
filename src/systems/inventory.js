@@ -57,6 +57,8 @@ function closeMenu(k) {
 
 function closeSubPanel(k) {
   subPanelOpen = false;
+  creativeClickHandlers.forEach(h => h.cancel());
+  creativeClickHandlers = [];
   k.get("subPanel").forEach(e => k.destroy(e));
   document.body.style.cursor = "default";
 }
@@ -282,13 +284,34 @@ function showControlsPanel(k) {
 }
 
 // ── Creative Mode panel ──
+// All slider definitions
+const ALL_SLIDERS = [
+  ["Player Speed", "player.speed", 50, 800, 10, v => `${v}`],
+  ["Player HP", "player.health", 10, 500, 10, v => `${v}`],
+  ["Player Damage", "player.damage", 1, 100, 1, v => `${v}`],
+  ["Crit Rate", "player.critRate", 0, 1, 0.05, v => `${Math.round(v * 100)}%`],
+  ["Crit Damage", "player.critDamage", 1, 5, 0.1, v => `${v.toFixed(1)}x`],
+  ["Boss HP", "boss.health", 10, 1000, 10, v => `${v}`],
+  ["Boss Damage", "boss.damage", 1, 100, 1, v => `${v}`],
+  ["Boss Speed", "boss.speed", 20, 400, 10, v => `${v}`],
+  ["Pet HP", "pet.health", 10, 2000, 50, v => `${v}`],
+  ["Pet Damage", "pet.damage", 1, 100, 1, v => `${v}`],
+  ["Swift Slash Dmg", "skills.swiftSlashDmg", 1, 200, 1, v => `${v}`],
+  ["Titan Cleave Dmg", "skills.titanCleaveDmg", 1, 300, 1, v => `${v}`],
+];
+const PER_PAGE = 6;
+let creativePage = 0;
+let creativeClickHandlers = [];
+
 function showCreativePanel(k) {
   subPanelOpen = true;
+  creativePage = 0;
+  creativeClickHandlers = [];
 
-  const pw = 420, ph = 500;
+  const pw = 440, ph = 480;
   const px = (k.width() - pw) / 2, py = (k.height() - ph) / 2;
 
-  // Glow effect
+  // Glow
   addFx(k, 108, "settingsMenu", "subPanel",
     k.rect(pw + 20, ph + 20, { radius: 18 }), k.pos(px - 10, py - 10),
     k.color(...C.purpleFace), k.opacity(0.18));
@@ -306,136 +329,101 @@ function showCreativePanel(k) {
 
   // Title
   addFx(k, 111, "settingsMenu", "subPanel",
-    k.text("🎨 CREATIVE MODE", { size: 22, font: "monospace" }),
+    k.text("🎨 CREATIVE MODE", { size: 24, font: "monospace" }),
     k.pos(px + pw / 2, py + 34), k.anchor("center"), k.color(...C.title));
   addFx(k, 111, "settingsMenu", "subPanel",
-    k.text("Changes apply live to existing entities", { size: 10, font: "monospace" }),
-    k.pos(px + pw / 2, py + 54), k.anchor("center"), k.color(...C.title), k.opacity(0.55));
+    k.text("Adjust game stats live", { size: 12, font: "monospace" }),
+    k.pos(px + pw / 2, py + 56), k.anchor("center"), k.color(...C.title), k.opacity(0.55));
   addFx(k, 111, "settingsMenu", "subPanel",
-    k.rect(pw - 60, 2), k.pos(px + 30, py + 64),
+    k.rect(pw - 60, 2), k.pos(px + 30, py + 68),
     k.color(...C.panelBorder), k.opacity(0.5));
 
-  // Sliders
-  const sliders = [
-    // [label,  configPath,       min, max,  step, format]
-    ["Player Speed", "player.speed", 50, 800, 10, v => `${v}`],
-    ["Player HP", "player.health", 10, 500, 10, v => `${v}`],
-    ["Player Damage", "player.damage", 1, 100, 1, v => `${v}`],
-    ["Crit Rate", "player.critRate", 0, 1, 0.05, v => `${Math.round(v * 100)}%`],
-    ["Crit Damage", "player.critDamage", 1, 5, 0.1, v => `${v.toFixed(1)}x`],
-    ["Boss HP", "boss.health", 10, 1000, 10, v => `${v}`],
-    ["Boss Damage", "boss.damage", 1, 100, 1, v => `${v}`],
-    ["Boss Speed", "boss.speed", 20, 400, 10, v => `${v}`],
-    ["Pet HP", "pet.health", 10, 2000, 50, v => `${v}`],
-    ["Pet Damage", "pet.damage", 1, 100, 1, v => `${v}`],
-    ["Swift Slash Dmg", "skills.swiftSlashDmg", 1, 200, 1, v => `${v}`],
-    ["Titan Cleave Dmg", "skills.titanCleaveDmg", 1, 300, 1, v => `${v}`],
-  ];
+  // Build first page of sliders
+  buildSliderPage(k, px, py, pw, ph);
 
-  const slW = pw - 50, slH = 6, knobR = 9;
-  const slX = px + 25, slStartY = py + 80;
-  const rowH = 32;
+  // ── Page nav ──
+  const totalPages = Math.ceil(ALL_SLIDERS.length / PER_PAGE);
+  const navY = py + ph - 100;
 
-  sliders.forEach(([label, path, min, max, step, fmt], i) => {
-    const y = slStartY + i * rowH;
-    const [section, key] = path.split(".");
-    const curVal = gameConfig[section][key];
+  // ◀ button
+  addFx(k, 112, "settingsMenu", "subPanel",
+    k.rect(40, 32, { radius: 7 }), k.pos(px + pw / 2 - 90 + 2, navY + 3), k.color(...C.blueShad));
+  const prevBtn = addFx(k, 113, "settingsMenu", "subPanel",
+    k.rect(40, 32, { radius: 7 }), k.area(), k.pos(px + pw / 2 - 90, navY),
+    k.color(...C.blueFace), k.outline(2, k.rgb(...C.panelBorder)));
+  addFx(k, 114, "settingsMenu", "subPanel",
+    k.text("◀", { size: 18 }), k.pos(px + pw / 2 - 70, navY + 16),
+    k.anchor("center"), k.color(...C.white));
 
-    // Label
-    addFx(k, 112, "settingsMenu", "subPanel",
-      k.text(label, { size: 13, font: "monospace" }),
-      k.pos(slX, y + slH / 2), k.anchor("left"), k.color(...C.dark));
+  // Page label
+  const pageLabel = addFx(k, 114, "settingsMenu", "subPanel",
+    k.text(`Page ${creativePage + 1} / ${totalPages}`, { size: 16, font: "monospace" }),
+    k.pos(px + pw / 2, navY + 16), k.anchor("center"), k.color(...C.dark));
 
-    // Value text (right side)
-    const valText = addFx(k, 114, "settingsMenu", "subPanel",
-      k.text(fmt(curVal), { size: 13, font: "monospace" }),
-      k.pos(slX + slW, y + slH / 2), k.anchor("right"), k.color(...C.purpleFace));
+  // ▶ button
+  addFx(k, 112, "settingsMenu", "subPanel",
+    k.rect(40, 32, { radius: 7 }), k.pos(px + pw / 2 + 52, navY + 3), k.color(...C.blueShad));
+  const nextBtn = addFx(k, 113, "settingsMenu", "subPanel",
+    k.rect(40, 32, { radius: 7 }), k.area(), k.pos(px + pw / 2 + 50, navY),
+    k.color(...C.blueFace), k.outline(2, k.rgb(...C.panelBorder)));
+  addFx(k, 114, "settingsMenu", "subPanel",
+    k.text("▶", { size: 18 }), k.pos(px + pw / 2 + 70, navY + 16),
+    k.anchor("center"), k.color(...C.white));
 
-    // Track bg
-    const trackX = slX + 120;
-    const trackW = slW - 120;
-    addFx(k, 112, "settingsMenu", "subPanel",
-      k.rect(trackW, slH, { radius: 3 }), k.pos(trackX, y),
-      k.color(...C.sliderTrack));
+  prevBtn.onHoverUpdate(() => { document.body.style.cursor = "pointer"; });
+  prevBtn.onHoverEnd(() => { document.body.style.cursor = "default"; });
+  nextBtn.onHoverUpdate(() => { document.body.style.cursor = "pointer"; });
+  nextBtn.onHoverEnd(() => { document.body.style.cursor = "default"; });
 
-    // Fill
-    const fillRatio = (curVal - min) / (max - min);
-    const fill = addFx(k, 113, "settingsMenu", "subPanel",
-      k.rect(Math.max(0, trackW * fillRatio), slH, { radius: 3 }),
-      k.pos(trackX, y), k.color(...C.sliderFill));
-
-    // Knob (draggable)
-    const knob = addFx(k, 114, "settingsMenu", "subPanel",
-      k.circle(knobR), k.area(),
-      k.pos(trackX + trackW * fillRatio, y + slH / 2),
-      k.anchor("center"), k.color(...C.white),
-      k.outline(2, k.rgb(...C.panelBorder)));
-
-    let dragging = false;
-
-    knob.onHoverUpdate(() => { document.body.style.cursor = "ew-resize"; });
-    knob.onHoverEnd(() => { document.body.style.cursor = "default"; });
-
-    // Only start dragging if mouse was pressed while hovering THIS knob
-    const clickHandler = k.onMousePress("left", () => {
-      if (knob.isHovering()) dragging = true;
-    });
-
-    // Clean up handlers when menu closes
-    k.get("subPanel")[0].onDestroy(() => {
-      clickHandler.cancel();
-    });
-
-    // Track click to jump
-    const trackHit = addFx(k, 113, "settingsMenu", "subPanel",
-      k.rect(trackW, 24, { radius: 3 }), k.area(),
-      k.pos(trackX, y - 9), k.color(0, 0, 0), k.opacity(0));
-    trackHit.onHoverUpdate(() => { document.body.style.cursor = "pointer"; });
-    trackHit.onHoverEnd(() => { document.body.style.cursor = "default"; });
-    trackHit.onClick(() => {
-      const mx = k.mousePos().x;
-      let ratio = (mx - trackX) / trackW;
-      ratio = Math.min(1, Math.max(0, ratio));
-      const raw = min + ratio * (max - min);
-      const snapped = Math.round(raw / step) * step;
-      const clamped = parseFloat(Math.min(max, Math.max(min, snapped)).toFixed(4));
-      gameConfig[section][key] = clamped;
-      const r2 = (clamped - min) / (max - min);
-      knob.pos.x = trackX + trackW * r2;
-      fill.width = Math.max(0, trackW * r2);
-      valText.text = fmt(clamped);
-      applyLiveStats(k, section, key, clamped);
-    });
-
-    knob.onUpdate(() => {
-      if (!dragging) return;
-      if (!k.isMouseDown("left")) { dragging = false; document.body.style.cursor = "default"; return; }
-      const mx = k.mousePos().x;
-      let ratio = (mx - trackX) / trackW;
-      ratio = Math.min(1, Math.max(0, ratio));
-      const raw = min + ratio * (max - min);
-      const snapped = Math.round(raw / step) * step;
-      const clamped = parseFloat(Math.min(max, Math.max(min, snapped)).toFixed(4));
-      gameConfig[section][key] = clamped;
-      const r2 = (clamped - min) / (max - min);
-      knob.pos.x = trackX + trackW * r2;
-      fill.width = Math.max(0, trackW * r2);
-      valText.text = fmt(clamped);
-      applyLiveStats(k, section, key, clamped);
-    });
+  prevBtn.onClick(() => {
+    if (creativePage > 0) {
+      creativePage--;
+      k.get("creativeSliders").forEach(e => k.destroy(e));
+      creativeClickHandlers.forEach(h => h.cancel());
+      creativeClickHandlers = [];
+      buildSliderPage(k, px, py, pw, ph);
+      pageLabel.text = `Page ${creativePage + 1} / ${totalPages}`;
+    }
+  });
+  nextBtn.onClick(() => {
+    if (creativePage < totalPages - 1) {
+      creativePage++;
+      k.get("creativeSliders").forEach(e => k.destroy(e));
+      creativeClickHandlers.forEach(h => h.cancel());
+      creativeClickHandlers = [];
+      buildSliderPage(k, px, py, pw, ph);
+      pageLabel.text = `Page ${creativePage + 1} / ${totalPages}`;
+    }
   });
 
-  // Reset defaults button
+  // Mouse wheel scrolling
+  const scrollHandler = k.onScroll((delta) => {
+    if (!subPanelOpen) return;
+    const dir = delta.y > 0 ? 1 : -1;
+    const newPage = creativePage + dir;
+    if (newPage >= 0 && newPage < totalPages) {
+      creativePage = newPage;
+      k.get("creativeSliders").forEach(e => k.destroy(e));
+      creativeClickHandlers.forEach(h => h.cancel());
+      creativeClickHandlers = [];
+      buildSliderPage(k, px, py, pw, ph);
+      pageLabel.text = `Page ${creativePage + 1} / ${totalPages}`;
+    }
+  });
+  // Cleanup scroll handler when panel closes
+  const firstSub = k.get("subPanel")[0];
+  if (firstSub) firstSub.onDestroy(() => scrollHandler.cancel());
+
+  // ── Bottom row: Reset + Back ──
+  const btnY = py + ph - 56;
   addFx(k, 112, "settingsMenu", "subPanel",
-    k.rect(154, 30, { radius: 7 }), k.pos(px + 25 + 2, py + ph - 54 + 3),
-    k.color(...C.redShad));
+    k.rect(154, 32, { radius: 7 }), k.pos(px + 25 + 2, btnY + 3), k.color(...C.redShad));
   const resetBtn = addFx(k, 113, "settingsMenu", "subPanel",
-    k.rect(154, 30, { radius: 7 }), k.area(),
-    k.pos(px + 25, py + ph - 54),
+    k.rect(154, 32, { radius: 7 }), k.area(), k.pos(px + 25, btnY),
     k.color(...C.redFace), k.outline(2, k.rgb(...C.panelBorder)));
   addFx(k, 114, "settingsMenu", "subPanel",
-    k.text("Reset Defaults", { size: 13, font: "monospace" }),
-    k.pos(px + 25 + 77, py + ph - 54 + 15), k.anchor("center"), k.color(...C.white));
+    k.text("Reset Defaults", { size: 14, font: "monospace" }),
+    k.pos(px + 25 + 77, btnY + 16), k.anchor("center"), k.color(...C.white));
   resetBtn.onHoverUpdate(() => { document.body.style.cursor = "pointer"; });
   resetBtn.onHoverEnd(() => { document.body.style.cursor = "default"; });
   resetBtn.onClick(() => {
@@ -443,11 +431,100 @@ function showCreativePanel(k) {
     Object.assign(gameConfig.boss, { health: 100, damage: 20, speed: 100 });
     Object.assign(gameConfig.pet, { health: 500, speed: 200, damage: 20, critRate: 0.05, critDamage: 1.1 });
     Object.assign(gameConfig.skills, { swiftSlashDmg: 10, swiftSlashCD: 0.5, titanCleaveDmg: 30, titanCleaveCD: 2.0, bladeStormDmg: 15, bladeStormCD: 3.0, theWorldCD: 5.0 });
-    closeSubPanel(k);
-    showCreativePanel(k);
+    k.get("creativeSliders").forEach(e => k.destroy(e));
+    creativeClickHandlers.forEach(h => h.cancel());
+    creativeClickHandlers = [];
+    buildSliderPage(k, px, py, pw, ph);
   });
 
-  buildBackButton(k, px + pw / 2 + 10, py + ph - 54);
+  buildBackButton(k, px + pw / 2 + 10, btnY);
+}
+
+// ── Build one page of sliders ──
+function buildSliderPage(k, px, py, pw, ph) {
+  const start = creativePage * PER_PAGE;
+  const pageSliders = ALL_SLIDERS.slice(start, start + PER_PAGE);
+
+  const slW = pw - 50, slH = 8, knobR = 10;
+  const slX = px + 25, slStartY = py + 82;
+  const rowH = 46;
+
+  pageSliders.forEach(([label, path, min, max, step, fmt], i) => {
+    const y = slStartY + i * rowH;
+    const [section, key] = path.split(".");
+    const curVal = gameConfig[section][key];
+
+    // Label
+    addFx(k, 112, "settingsMenu", "subPanel", "creativeSliders",
+      k.text(label, { size: 16, font: "monospace" }),
+      k.pos(slX, y), k.anchor("left"), k.color(...C.dark));
+
+    // Value (right-aligned)
+    const valText = addFx(k, 114, "settingsMenu", "subPanel", "creativeSliders",
+      k.text(fmt(curVal), { size: 16, font: "monospace" }),
+      k.pos(slX + slW, y), k.anchor("right"), k.color(...C.purpleFace));
+
+    // Track
+    const trackX = slX;
+    const trackW = slW;
+    const trackY = y + 22;
+    addFx(k, 112, "settingsMenu", "subPanel", "creativeSliders",
+      k.rect(trackW, slH, { radius: 4 }), k.pos(trackX, trackY),
+      k.color(...C.sliderTrack));
+
+    // Fill
+    const fillRatio = (curVal - min) / (max - min);
+    const fill = addFx(k, 113, "settingsMenu", "subPanel", "creativeSliders",
+      k.rect(Math.max(0, trackW * fillRatio), slH, { radius: 4 }),
+      k.pos(trackX, trackY), k.color(...C.sliderFill));
+
+    // Knob
+    const knob = addFx(k, 114, "settingsMenu", "subPanel", "creativeSliders",
+      k.circle(knobR), k.area(),
+      k.pos(trackX + trackW * fillRatio, trackY + slH / 2),
+      k.anchor("center"), k.color(...C.white),
+      k.outline(2, k.rgb(...C.panelBorder)));
+
+    let dragging = false;
+
+    knob.onHoverUpdate(() => { document.body.style.cursor = "ew-resize"; });
+    knob.onHoverEnd(() => { if (!dragging) document.body.style.cursor = "default"; });
+
+    const clickH = k.onMousePress("left", () => {
+      if (knob.isHovering()) dragging = true;
+    });
+    creativeClickHandlers.push(clickH);
+
+    // Track click zone
+    const trackHit = addFx(k, 113, "settingsMenu", "subPanel", "creativeSliders",
+      k.rect(trackW, 26, { radius: 4 }), k.area(),
+      k.pos(trackX, trackY - 9), k.color(0, 0, 0), k.opacity(0));
+    trackHit.onHoverUpdate(() => { document.body.style.cursor = "pointer"; });
+    trackHit.onHoverEnd(() => { document.body.style.cursor = "default"; });
+
+    // Shared update logic
+    function applySlider(mx) {
+      let ratio = (mx - trackX) / trackW;
+      ratio = Math.min(1, Math.max(0, ratio));
+      const raw = min + ratio * (max - min);
+      const snapped = Math.round(raw / step) * step;
+      const clamped = parseFloat(Math.min(max, Math.max(min, snapped)).toFixed(4));
+      gameConfig[section][key] = clamped;
+      const r2 = (clamped - min) / (max - min);
+      knob.pos.x = trackX + trackW * r2;
+      fill.width = Math.max(0, trackW * r2);
+      valText.text = fmt(clamped);
+      applyLiveStats(k, section, key, clamped);
+    }
+
+    trackHit.onClick(() => applySlider(k.mousePos().x));
+
+    knob.onUpdate(() => {
+      if (!dragging) return;
+      if (!k.isMouseDown("left")) { dragging = false; document.body.style.cursor = "default"; return; }
+      applySlider(k.mousePos().x);
+    });
+  });
 }
 
 // ── Push live stat changes onto existing entities ──
