@@ -16,6 +16,16 @@ export function isTouchMode() {
     return gameConfig.ui.controlMode === "touch";
 }
 
+function checkPressed(btn, k) {
+    if (k.isMouseDown("left") && btn.isHovering()) return true;
+    if (k.getTouches) {
+        for (const t of k.getTouches()) {
+            if (btn.hasPoint(t.pos)) return true;
+        }
+    }
+    return false;
+}
+
 export function showTouchControls(k) {
     hideTouchControls(k);
     if (!isTouchMode()) return;
@@ -89,7 +99,7 @@ export function showTouchControls(k) {
         ]);
 
         btn.onUpdate(() => {
-            if (k.isMouseDown("left") && btn.isHovering()) {
+            if (checkPressed(btn, k)) {
                 touchInput[key] = true;
                 arrow.opacity = 1.0;
                 arrow.color = k.rgb(255, 220, 50);
@@ -162,10 +172,15 @@ function makeActionButton(k, x, y, r, key, label, color) {
         "touchControl",
     ]);
 
-    btn.onClick(() => {
-        touchInput[key] = true;
-        btn.opacity = 0.9;
-        k.wait(0.15, () => { if (btn.exists()) btn.opacity = 0.6; });
+    let lastPressed = false;
+    btn.onUpdate(() => {
+        const pressed = checkPressed(btn, k);
+        if (pressed && !lastPressed) {
+            touchInput[key] = true;
+            btn.opacity = 0.9;
+            k.wait(0.15, () => { if (btn.exists()) btn.opacity = 0.6; });
+        }
+        lastPressed = pressed;
     });
 }
 

@@ -58,8 +58,7 @@ export function setPlayerControls(k, player) {
             k.go("gameover");
             return;
         }
-
-        k.camPos(player.pos.x, player.pos.y + 100);
+        k.camPos(player.pos);
 
         // Player can still move during time stop - only pause and dialogue block movement
         if (gameState.isPaused || player.isInDialogue) return;

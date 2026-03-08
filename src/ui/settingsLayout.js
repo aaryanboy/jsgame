@@ -11,13 +11,13 @@ export function getLayout(w, h) {
     const gap = Math.round(Math.max(12, w * 0.025));
 
     // ── Settings panel (LEFT) ──
-    const settingsW = Math.round(w * 0.44);
+    const settingsW = Math.round((w - margin * 3) / 2);
     const settingsH = h - margin * 2;
     const settingsX = margin;
     const settingsY = margin;
 
     // ── Skin panel (RIGHT, fills remaining space) ──
-    const skinX = settingsX + settingsW + gap;
+    const skinX = settingsX + settingsW + margin;
     const skinW = w - skinX - margin;
     const skinH = settingsH;
     const skinY = margin;
@@ -36,21 +36,28 @@ export function getLayout(w, h) {
     };
 
     // ── Responsive element sizes ──
-    const itemH = Math.round(Math.max(44, settingsH * 0.1));
-    const itemGap = Math.round(Math.max(8, settingsH * 0.018));
-    const itemPadX = Math.round(Math.max(30, settingsW * 0.1));
-    const itemW = settingsW - itemPadX * 2;
-    const itemStartY = settingsY + Math.round(settingsH * 0.2);
+    const itemStartY = settingsY + Math.round(settingsH * 0.18);
+    const availableH = settingsH - (itemStartY - settingsY) - margin;
 
-    const toggleW = Math.round(Math.max(60, itemW * 0.22));
-    const toggleH = Math.round(Math.max(24, itemH * 0.5));
+    // Fit 5 rows cleanly
+    const rowH = Math.floor(availableH / 5.2);
+    const itemH = Math.max(28, Math.round(rowH * 0.85));
+    const itemGap = Math.max(4, Math.round(rowH * 0.15));
+
+    const itemPadX = Math.round(Math.max(16, settingsW * 0.05));
+    const itemW = settingsW - itemPadX * 2;
+
+    const toggleW = Math.round(Math.max(40, itemW * 0.22));
+    const toggleH = Math.round(Math.max(20, itemH * 0.5));
     const toggleKnobR = Math.round(toggleH * 0.42);
 
     // ── Split buttons (Resume/Restart) ──
     const splitBtnW = Math.round((itemW - gap) / 2);
     const splitBtnX1 = settingsX + itemPadX;
     const splitBtnX2 = splitBtnX1 + splitBtnW + gap;
-    const splitBtnY = settingsY + settingsH - itemH - Math.round(margin * 1.5);
+
+    // Position the split buttons rigidly on the 5th row
+    const splitBtnY = itemStartY + 4 * (itemH + itemGap);
 
     // ── Skin panel elements ──
     const skinPreviewSize = Math.round(Math.max(100, Math.min(skinW, skinH) * 0.3));
@@ -63,15 +70,15 @@ export function getLayout(w, h) {
     const applyBtnH = Math.round(Math.max(36, skinH * 0.065));
 
     // ── Sub-panel (Controls / Creative) — centered overlay ──
-    const subPanelW = Math.round(w * 0.55);
+    const subPanelW = Math.round(Math.max(400, w * 0.65));
     const subPanelH = Math.round(h * 0.88);
     const subPanelX = Math.round((w - subPanelW) / 2);
     const subPanelY = Math.round((h - subPanelH) / 2);
 
     // Controls
-    const controlKeyW = Math.round(Math.max(70, subPanelW * 0.2));
-    const controlKeyH = Math.round(Math.max(24, subPanelH * 0.04));
-    const controlRowH = Math.round(Math.max(32, subPanelH * 0.065));
+    const controlKeyW = Math.round(Math.max(60, subPanelW * 0.15));
+    const controlKeyH = Math.round(Math.max(20, subPanelH * 0.045));
+    const controlRowH = Math.round(Math.max(26, subPanelH * 0.08));
 
     // Creative sliders
     const sliderRowH = Math.round(Math.max(42, subPanelH * 0.08));
