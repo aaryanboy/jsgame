@@ -1,8 +1,10 @@
 // Skill Bar UI Component - Simple vertical layout
 import { skills } from "../utils/constants.js";
 import { gameState } from "../utils/utils.js";
+import { isTouchMode } from "./touchControls.js";
 
 export function createSkillBar(k, player) {
+    if (isTouchMode()) return;
     // New keybindings: m, comma, period, slash
     const skillKeys = ['m', ',', '.', '/'];
     const skillTimerKeys = ['mTimer', 'commaTimer', 'periodTimer', 'slashTimer'];

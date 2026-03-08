@@ -1,8 +1,7 @@
 // ── On-Screen Touch Controls ──
 // Creates a virtual D-pad (left side) and action buttons (right side)
-// that inject virtual key states into a shared touchInput object.
-
 import { gameConfig } from "../utils/constants.js";
+import { gameState } from "../utils/utils.js";
 
 // ── Shared virtual input state ──
 export const touchInput = {
@@ -26,7 +25,10 @@ function checkPressed(btn, k) {
     return false;
 }
 
-export function showTouchControls(k) {
+let touchPlayer = null;
+
+export function showTouchControls(k, player) {
+    if (player) touchPlayer = player;
     hideTouchControls(k);
     if (!isTouchMode()) return;
 
@@ -62,54 +64,75 @@ export function showTouchControls(k) {
         "touchControl",
     ]);
 
-    // 4 Directional Quadrants over the joystick
-    const padSize = Math.round(joyR * 0.85);
-    const dirs = [
-        { key: "up", dx: 0, dy: -1, label: "▲" },
-        { key: "down", dx: 0, dy: 1, label: "▼" },
-        { key: "left", dx: -1, dy: 0, label: "◀" },
-        { key: "right", dx: 1, dy: 0, label: "▶" },
-    ];
+    // Draggable Joystick Handle
+    const handleR = Math.round(joyR * 0.4);
+    const handle = k.add([
+        k.circle(handleR),
+        k.pos(joyX, joyY),
+        k.anchor("center"),
+        k.color(200, 210, 220),
+        k.opacity(0.8),
+        k.outline(2, k.rgb(255, 255, 255)),
+        k.fixed(),
+        { z: 205 },
+        "touchControl",
+    ]);
 
-    dirs.forEach(({ key, dx, dy, label }) => {
-        const ax = joyX + dx * padSize * 0.55;
-        const ay = joyY + dy * padSize * 0.55;
+    // Joystick Interaction Logic
+    let joyActive = false;
+    let joyPointerId = null;
 
-        const btn = k.add([
-            k.circle(padSize * 0.55),
-            k.pos(ax, ay),
-            k.anchor("center"),
-            k.area(),
-            k.color(255, 255, 255),
-            k.opacity(0.0), // Invisible interaction area
-            k.fixed(),
-            { z: 202 },
-            "touchControl",
-        ]);
-
-        const arrow = k.add([
-            k.text(label, { size: Math.round(padSize * 0.4) }),
-            k.pos(ax, ay),
-            k.anchor("center"),
-            k.color(200, 200, 200),
-            k.opacity(0.5),
-            k.fixed(),
-            { z: 203 },
-            "touchControl",
-        ]);
-
-        btn.onUpdate(() => {
-            if (checkPressed(btn, k)) {
-                touchInput[key] = true;
-                arrow.opacity = 1.0;
-                arrow.color = k.rgb(255, 220, 50);
-            } else {
-                touchInput[key] = false;
-                arrow.opacity = 0.5;
-                arrow.color = k.rgb(200, 200, 200);
-            }
-        });
+    k.onPointerDown((pos, id) => {
+        // If they click/tap inside the joystick base area
+        const dist = pos.dist(k.vec2(joyX, joyY));
+        if (dist < joyR * 1.5 && !joyActive) {
+            joyActive = true;
+            joyPointerId = id;
+            updateJoystick(pos);
+        }
     });
+
+    k.onPointerMove((pos, id) => {
+        if (joyActive && id === joyPointerId) {
+            updateJoystick(pos);
+        }
+    });
+
+    k.onPointerRelease((id) => {
+        if (joyActive && id === joyPointerId) {
+            joyActive = false;
+            joyPointerId = null;
+            // Snap back to center
+            handle.pos = k.vec2(joyX, joyY);
+            handle.opacity = 0.8;
+            touchInput.up = false;
+            touchInput.down = false;
+            touchInput.left = false;
+            touchInput.right = false;
+        }
+    });
+
+    function updateJoystick(pos) {
+        handle.opacity = 1.0;
+        let diff = pos.sub(k.vec2(joyX, joyY));
+        let dist = diff.len();
+        const maxDist = joyR - handleR * 0.5;
+
+        // Clamp handle to joystick base
+        if (dist > maxDist) {
+            diff = diff.scale(maxDist / dist);
+        }
+        handle.pos = k.vec2(joyX, joyY).add(diff);
+
+        // Determine directions based on thresholds
+        // We use a deadzone of roughly 20% to prevent drift
+        const deadzone = maxDist * 0.2;
+
+        touchInput.up = diff.y < -deadzone;
+        touchInput.down = diff.y > deadzone;
+        touchInput.left = diff.x < -deadzone;
+        touchInput.right = diff.x > deadzone;
+    }
 
     // ── MOBA Action Buttons (Right) ──
     const atkR = Math.round(base * 0.12);
@@ -117,7 +140,7 @@ export function showTouchControls(k) {
     const atkY = Math.round(h * 0.78);
 
     // Basic Attack Button
-    makeActionButton(k, atkX, atkY, atkR, "m", "ATK", [255, 70, 50]);
+    makeActionButton(k, atkX, atkY, atkR, "m", "ATK", [255, 70, 50], 'mTimer');
 
     // Skills Arc
     const arcDist = Math.round(base * 0.22);
@@ -125,19 +148,19 @@ export function showTouchControls(k) {
 
     // Angles: 0 is Right, PI is Left, -PI/2 is Up. We want an arc from Left to Up.
     const skills = [
-        { key: "comma", label: "S1", color: [40, 180, 255], angle: Math.PI },                // Left
-        { key: "period", label: "S2", color: [255, 170, 30], angle: Math.PI * 1.25 },        // Top-Left
-        { key: "slash", label: "ULT", color: [160, 50, 255], angle: Math.PI * 1.5 },         // Top
+        { key: "comma", label: "S1", color: [40, 180, 255], angle: Math.PI, timerKey: "commaTimer" },                // Left
+        { key: "period", label: "S2", color: [255, 170, 30], angle: Math.PI * 1.25, timerKey: "periodTimer" },        // Top-Left
+        { key: "slash", label: "ULT", color: [160, 50, 255], angle: Math.PI * 1.5, timerKey: "slashTimer" },         // Top
     ];
 
-    skills.forEach(({ key, label, color, angle }) => {
+    skills.forEach(({ key, label, color, angle, timerKey }) => {
         const sx = atkX + Math.cos(angle) * arcDist;
         const sy = atkY + Math.sin(angle) * arcDist;
-        makeActionButton(k, sx, sy, skillR, key, label, color);
+        makeActionButton(k, sx, sy, skillR, key, label, color, timerKey);
     });
 }
 
-function makeActionButton(k, x, y, r, key, label, color) {
+function makeActionButton(k, x, y, r, key, label, color, timerKey) {
     k.add([
         k.circle(r),
         k.pos(x + 2, y + 4),
@@ -172,10 +195,57 @@ function makeActionButton(k, x, y, r, key, label, color) {
         "touchControl",
     ]);
 
+    const cdOverlay = k.add([
+        k.circle(r),
+        k.pos(x, y),
+        k.anchor("center"),
+        k.color(0, 0, 0),
+        k.opacity(0),
+        k.fixed(),
+        { z: 203 },
+        "touchControl",
+    ]);
+
+    const cdText = k.add([
+        k.text("", { size: Math.round(r * 0.6), font: "monospace", weight: "bold" }),
+        k.pos(x, y),
+        k.anchor("center"),
+        k.color(255, 255, 0),
+        k.fixed(),
+        { z: 204 },
+        "touchControl",
+    ]);
+
     let lastPressed = false;
     btn.onUpdate(() => {
+        // Cooldown Rendering Logic
+        let isOnCooldown = false;
+
+        // Custom logic for ULT (The World)
+        if (key === 'slash' && gameState.isTimeStopped) {
+            cdOverlay.opacity = 0.4;
+            cdText.text = "ACT";
+            cdText.color = k.rgb(147, 112, 219); // Purple
+            isOnCooldown = true;
+        } else if (touchPlayer && timerKey) {
+            const timer = touchPlayer[timerKey];
+            if (timer > 0) {
+                isOnCooldown = true;
+                cdOverlay.opacity = 0.6;
+                cdText.text = timer.toFixed(1);
+                cdText.color = k.rgb(255, 255, 0); // Yellow
+            } else {
+                cdOverlay.opacity = 0;
+                cdText.text = "";
+            }
+        } else {
+            cdOverlay.opacity = 0;
+            cdText.text = "";
+        }
+
         const pressed = checkPressed(btn, k);
-        if (pressed && !lastPressed) {
+        // Only trigger if pressed this frame, wasn't pressed last frame, and not on cooldown
+        if (pressed && !lastPressed && !isOnCooldown) {
             touchInput[key] = true;
             btn.opacity = 0.9;
             k.wait(0.15, () => { if (btn.exists()) btn.opacity = 0.6; });
