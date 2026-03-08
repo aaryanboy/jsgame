@@ -47,6 +47,7 @@ function cancelHandlers() { handlers.forEach(h => h.cancel()); handlers = []; }
 
 function closeMenu(k) {
   k.destroyAll("settingsMenu");
+  k.destroyAll("skinPanel");
   cancelHandlers();
   setGamePause(k, false);
   subPanelOpen = false;
@@ -63,15 +64,18 @@ function closeSubPanel(k) {
   document.body.style.cursor = "default";
 }
 
-// ── Main panel ──
+// ── Main panel (LEFT side, near full-screen) ──
 function openMenu(k) {
   setGamePause(k, true);
   selectedIndex = 0;
   subPanelOpen = false;
 
-  const pw = 380, ph = 450;
-  const px = (k.width() - pw) / 2;
-  const py = (k.height() - ph) / 2;
+  const margin = 30;
+  const gap = 30;
+  const pw = Math.floor(k.width() * 0.44);
+  const ph = k.height() - margin * 2;
+  const px = margin;
+  const py = margin;
 
   // Overlay
   addFx(k, 98, "settingsMenu",
@@ -80,29 +84,29 @@ function openMenu(k) {
 
   // Panel shadow + body
   addFx(k, 99, "settingsMenu",
-    k.rect(pw + 4, ph + 6, { radius: 14 }), k.pos(px, py + 4),
+    k.rect(pw + 4, ph + 6, { radius: 16 }), k.pos(px, py + 4),
     k.color(...C.shadow), k.opacity(0.4));
   addFx(k, 100, "settingsMenu",
-    k.rect(pw, ph, { radius: 12 }), k.pos(px, py),
+    k.rect(pw, ph, { radius: 14 }), k.pos(px, py),
     k.color(...C.panelBg), k.outline(4, k.rgb(...C.panelBorder)));
   addFx(k, 100, "settingsMenu",
-    k.rect(pw - 20, ph - 20, { radius: 8 }), k.pos(px + 10, py + 10),
+    k.rect(pw - 24, ph - 24, { radius: 10 }), k.pos(px + 12, py + 12),
     k.color(...C.panelInner), k.outline(2, k.rgb(...C.separator)));
 
   // Title
   addFx(k, 101, "settingsMenu",
-    k.text("SETTINGS", { size: 32, font: "monospace" }),
-    k.pos(px + pw / 2, py + 42), k.anchor("center"), k.color(...C.title));
+    k.text("SETTINGS", { size: 42, font: "monospace" }),
+    k.pos(px + pw / 2, py + 55), k.anchor("center"), k.color(...C.title));
 
   // Decorative dots
   for (let d = -2; d <= 2; d++) {
     addFx(k, 101, "settingsMenu",
-      k.circle(4), k.pos(px + pw / 2 + d * 18, py + 62), k.anchor("center"),
+      k.circle(5), k.pos(px + pw / 2 + d * 22, py + 82), k.anchor("center"),
       k.color(...(d === 0 ? C.redFace : C.panelBorder)), k.opacity(d === 0 ? 1 : 0.5));
   }
 
   addFx(k, 101, "settingsMenu",
-    k.rect(pw - 60, 2, { radius: 1 }), k.pos(px + 30, py + 75),
+    k.rect(pw - 80, 2, { radius: 1 }), k.pos(px + 40, py + 98),
     k.color(...C.panelBorder), k.opacity(0.5));
 
   // ── Menu items ──
@@ -110,33 +114,32 @@ function openMenu(k) {
   menuItems = [
     { type: "toggle", label: "Music", key: "music", value: musicIsOn },
     { type: "btn", label: "Controls", color: "blue", action: "controls" },
-    { type: "btn", label: "Change Skin 👕", color: "purple", action: "skin" },
     { type: "btn", label: "Creative Mode 🎨", color: "purple", action: "creative" },
     { type: "btn", label: "Resume Game", color: "green", action: "resume" },
     { type: "btn", label: "Restart Game", color: "red", action: "restart" },
   ];
 
-  const itemW = pw - 70, itemH = 46, gap = 8;
-  const itemX = px + 35, startY = py + 92;
+  const itemW = pw - 90, itemH = 60, itemGap = 12;
+  const itemX = px + 45, startY = py + 120;
   toggleRefs = {};
 
   menuItems.forEach((item, i) => {
-    const y = startY + i * (itemH + gap);
+    const y = startY + i * (itemH + itemGap);
     const { face: fc, shad: sc } = btnColors(item);
 
     addFx(k, 101, "settingsMenu",
-      k.rect(itemW, itemH, { radius: 8 }), k.pos(itemX + 2, y + 4), k.color(...sc));
+      k.rect(itemW, itemH, { radius: 10 }), k.pos(itemX + 2, y + 4), k.color(...sc));
 
     const face = addFx(k, 102, "settingsMenu", "menuFace_" + i,
-      k.rect(itemW, itemH, { radius: 8 }), k.area(), k.pos(itemX, y),
+      k.rect(itemW, itemH, { radius: 10 }), k.area(), k.pos(itemX, y),
       k.color(...fc), k.outline(2, k.rgb(...C.panelBorder)));
 
     const tColor = item.type === "toggle" ? C.dark : C.white;
     addFx(k, 103, "settingsMenu",
-      k.text(item.label, { size: 18, font: "monospace" }),
-      k.pos(itemX + 18, y + itemH / 2), k.anchor("left"), k.color(...tColor));
+      k.text(item.label, { size: 24, font: "monospace" }),
+      k.pos(itemX + 24, y + itemH / 2), k.anchor("left"), k.color(...tColor));
 
-    if (item.type === "toggle") buildToggle(k, item, itemX + itemW - 90, y + itemH / 2 - 14);
+    if (item.type === "toggle") buildToggle(k, item, itemX + itemW - 110, y + itemH / 2 - 16);
 
     face.onHoverUpdate(() => {
       if (!subPanelOpen) { selectedIndex = i; document.body.style.cursor = "pointer"; }
@@ -147,13 +150,13 @@ function openMenu(k) {
 
   // Selector arrow
   const selector = addFx(k, 105, "settingsMenu",
-    k.text("▶", { size: 22 }), k.pos(itemX - 22, startY + itemH / 2),
+    k.text("▶", { size: 28 }), k.pos(itemX - 28, startY + itemH / 2),
     k.anchor("center"), k.color(...C.gold));
 
   selector.onUpdate(() => {
-    const ty = startY + selectedIndex * (itemH + gap) + itemH / 2;
+    const ty = startY + selectedIndex * (itemH + itemGap) + itemH / 2;
     selector.pos.y = k.lerp(selector.pos.y, ty, 0.25);
-    selector.pos.x = itemX - 22 + Math.sin(k.time() * 5) * 3;
+    selector.pos.x = itemX - 28 + Math.sin(k.time() * 5) * 4;
   });
 
   // Selected outline updater
@@ -170,8 +173,8 @@ function openMenu(k) {
 
   // Footer
   addFx(k, 101, "settingsMenu",
-    k.text("Navigate · Click / Enter · Tab Close", { size: 10, font: "monospace" }),
-    k.pos(px + pw / 2, py + ph - 20), k.anchor("center"),
+    k.text("Navigate · Click / Enter · Tab Close", { size: 14, font: "monospace" }),
+    k.pos(px + pw / 2, py + ph - 28), k.anchor("center"),
     k.color(...C.title), k.opacity(0.55));
 
   // Key handlers
@@ -182,19 +185,22 @@ function openMenu(k) {
   handlers.push(k.onKeyPress("s", nav(1)));
   handlers.push(k.onKeyPress("enter", () => activate(k)));
   handlers.push(k.onKeyPress("escape", () => { if (subPanelOpen) closeSubPanel(k); else closeMenu(k); }));
+
+  // Always show skin panel on the right
+  showSkinPanel(k);
 }
 
 // ── Toggle widget ──
 function buildToggle(k, item, tX, tY) {
   const track = addFx(k, 103, "settingsMenu",
-    k.rect(70, 28, { radius: 14 }), k.pos(tX, tY),
+    k.rect(80, 32, { radius: 16 }), k.pos(tX, tY),
     k.color(...(item.value ? C.toggleOn : C.toggleOff)));
   const knob = addFx(k, 104, "settingsMenu",
-    k.circle(11), k.pos(item.value ? tX + 56 : tX + 14, tY + 14),
+    k.circle(13), k.pos(item.value ? tX + 64 : tX + 16, tY + 16),
     k.anchor("center"), k.color(255, 255, 255), k.outline(1, k.rgb(200, 200, 200)));
   const lbl = addFx(k, 104, "settingsMenu",
-    k.text(item.value ? "ON" : "OFF", { size: 12, font: "monospace" }),
-    k.pos(item.value ? tX + 25 : tX + 42, tY + 14), k.anchor("center"),
+    k.text(item.value ? "ON" : "OFF", { size: 14, font: "monospace" }),
+    k.pos(item.value ? tX + 30 : tX + 48, tY + 16), k.anchor("center"),
     k.color(255, 255, 255));
   toggleRefs[item.key] = { track, knob, lbl, tX, tY };
 }
@@ -211,9 +217,9 @@ function activate(k) {
     const r = toggleRefs[item.key];
     if (r) {
       r.track.color = item.value ? k.rgb(...C.toggleOn) : k.rgb(...C.toggleOff);
-      r.knob.pos.x = item.value ? r.tX + 56 : r.tX + 14;
+      r.knob.pos.x = item.value ? r.tX + 64 : r.tX + 16;
       r.lbl.text = item.value ? "ON" : "OFF";
-      r.lbl.pos.x = item.value ? r.tX + 25 : r.tX + 42;
+      r.lbl.pos.x = item.value ? r.tX + 30 : r.tX + 48;
     }
     return;
   }
@@ -221,7 +227,6 @@ function activate(k) {
   switch (item.action) {
     case "resume": closeMenu(k); break;
     case "controls": showControlsPanel(k); break;
-    case "skin": showSkinPanel(k); break;
     case "creative": showCreativePanel(k); break;
     case "restart":
       // Stop existing BGM cleanly before restarting
@@ -239,26 +244,31 @@ function activate(k) {
   }
 }
 
-// ── Controls sub-panel ──
+// ── Controls sub-panel (full overlay) ──
 function showControlsPanel(k) {
   subPanelOpen = true;
-  const pw = 350, ph = 420;
+  const pw = Math.floor(k.width() * 0.5), ph = Math.floor(k.height() * 0.85);
   const px = (k.width() - pw) / 2, py = (k.height() - ph) / 2;
 
-  addFx(k, 109, "settingsMenu", "subPanel",
-    k.rect(pw + 4, ph + 6, { radius: 14 }), k.pos(px, py + 4),
+  // Dark overlay to cover settings behind
+  addFx(k, 115, "settingsMenu", "subPanel",
+    k.rect(k.width() * 3, k.height() * 3), k.pos(-k.width(), -k.height()),
+    k.color(0, 0, 0), k.opacity(0.7));
+
+  addFx(k, 116, "settingsMenu", "subPanel",
+    k.rect(pw + 4, ph + 6, { radius: 16 }), k.pos(px, py + 4),
     k.color(...C.shadow), k.opacity(0.4));
-  addFx(k, 110, "settingsMenu", "subPanel",
-    k.rect(pw, ph, { radius: 12 }), k.pos(px, py),
+  addFx(k, 117, "settingsMenu", "subPanel",
+    k.rect(pw, ph, { radius: 14 }), k.pos(px, py),
     k.color(...C.panelBg), k.outline(4, k.rgb(...C.panelBorder)));
-  addFx(k, 110, "settingsMenu", "subPanel",
-    k.rect(pw - 20, ph - 20, { radius: 8 }), k.pos(px + 10, py + 10),
+  addFx(k, 117, "settingsMenu", "subPanel",
+    k.rect(pw - 24, ph - 24, { radius: 10 }), k.pos(px + 12, py + 12),
     k.color(...C.panelInner), k.outline(2, k.rgb(...C.separator)));
-  addFx(k, 111, "settingsMenu", "subPanel",
-    k.text("CONTROLS", { size: 28, font: "monospace" }),
-    k.pos(px + pw / 2, py + 36), k.anchor("center"), k.color(...C.title));
-  addFx(k, 111, "settingsMenu", "subPanel",
-    k.rect(pw - 60, 2), k.pos(px + 30, py + 55),
+  addFx(k, 118, "settingsMenu", "subPanel",
+    k.text("CONTROLS", { size: 36, font: "monospace" }),
+    k.pos(px + pw / 2, py + 48), k.anchor("center"), k.color(...C.title));
+  addFx(k, 118, "settingsMenu", "subPanel",
+    k.rect(pw - 80, 2), k.pos(px + 40, py + 72),
     k.color(...C.panelBorder), k.opacity(0.5));
 
   const controls = [
@@ -267,49 +277,53 @@ function showControlsPanel(k) {
     ["Space", "Dialogue"], ["Tab", "Settings"], ["Esc", "Close Menu"],
   ];
 
-  const lx = px + 25, sy = py + 68, lh = 30;
+  const lx = px + 40, sy = py + 90, lh = 42;
   controls.forEach(([key, desc], i) => {
     const y = sy + i * lh;
-    addFx(k, 112, "settingsMenu", "subPanel",
-      k.rect(80, 22, { radius: 5 }), k.pos(lx + 1, y + 2), k.color(...C.blueShad));
-    addFx(k, 113, "settingsMenu", "subPanel",
-      k.rect(80, 22, { radius: 5 }), k.pos(lx, y), k.color(...C.blueFace));
-    addFx(k, 114, "settingsMenu", "subPanel",
-      k.text(key, { size: 14, font: "monospace" }),
-      k.pos(lx + 40, y + 11), k.anchor("center"), k.color(...C.white));
-    addFx(k, 113, "settingsMenu", "subPanel",
-      k.text(desc, { size: 16, font: "monospace" }),
-      k.pos(lx + 96, y + 11), k.anchor("left"), k.color(...C.dark));
+    addFx(k, 119, "settingsMenu", "subPanel",
+      k.rect(100, 30, { radius: 6 }), k.pos(lx + 1, y + 2), k.color(...C.blueShad));
+    addFx(k, 120, "settingsMenu", "subPanel",
+      k.rect(100, 30, { radius: 6 }), k.pos(lx, y), k.color(...C.blueFace));
+    addFx(k, 121, "settingsMenu", "subPanel",
+      k.text(key, { size: 18, font: "monospace" }),
+      k.pos(lx + 50, y + 15), k.anchor("center"), k.color(...C.white));
+    addFx(k, 120, "settingsMenu", "subPanel",
+      k.text(desc, { size: 22, font: "monospace" }),
+      k.pos(lx + 120, y + 15), k.anchor("left"), k.color(...C.dark));
   });
 
-  buildBackButton(k, px + pw / 2 - 100, py + ph - 52);
+  buildBackButton(k, px + pw / 2 - 100, py + ph - 65);
 }
 
-// ── Skin Selection Panel ──
+// ── Skin Selection Panel (always visible on the RIGHT, near full-screen) ──
 function showSkinPanel(k) {
-  subPanelOpen = true;
 
-  const pw = 360, ph = 400;
-  const px = (k.width() - pw) / 2, py = (k.height() - ph) / 2;
+  const margin = 30;
+  const gap = 30;
+  const settingsPw = Math.floor(k.width() * 0.44);
+  const px = margin + settingsPw + gap;
+  const pw = k.width() - px - margin;
+  const ph = k.height() - margin * 2;
+  const py = margin;
 
   // Glow
-  addFx(k, 108, "settingsMenu", "subPanel",
+  addFx(k, 108, "skinPanel",
     k.rect(pw + 20, ph + 20, { radius: 18 }), k.pos(px - 10, py - 10),
     k.color(...C.purpleFace), k.opacity(0.18));
 
-  addFx(k, 109, "settingsMenu", "subPanel",
-    k.rect(pw + 4, ph + 6, { radius: 14 }), k.pos(px, py + 4),
+  addFx(k, 109, "skinPanel",
+    k.rect(pw + 4, ph + 6, { radius: 16 }), k.pos(px, py + 4),
     k.color(...C.shadow), k.opacity(0.4));
-  addFx(k, 110, "settingsMenu", "subPanel",
-    k.rect(pw, ph, { radius: 12 }), k.pos(px, py),
+  addFx(k, 110, "skinPanel",
+    k.rect(pw, ph, { radius: 14 }), k.pos(px, py),
     k.color(...C.panelBg), k.outline(4, k.rgb(...C.panelBorder)));
-  addFx(k, 110, "settingsMenu", "subPanel",
-    k.rect(pw - 20, ph - 20, { radius: 8 }), k.pos(px + 10, py + 10),
+  addFx(k, 110, "skinPanel",
+    k.rect(pw - 24, ph - 24, { radius: 10 }), k.pos(px + 12, py + 12),
     k.color(...C.panelInner), k.outline(2, k.rgb(...C.separator)));
 
-  addFx(k, 111, "settingsMenu", "subPanel",
-    k.text("SELECT SKIN", { size: 28, font: "monospace" }),
-    k.pos(px + pw / 2, py + 36), k.anchor("center"), k.color(...C.title));
+  addFx(k, 111, "skinPanel",
+    k.text("SELECT SKIN", { size: 36, font: "monospace" }),
+    k.pos(px + pw / 2, py + 50), k.anchor("center"), k.color(...C.title));
 
   const SUBTITLES = [
     "Purple Knight", "Green Knight", "Gold Knight", "Red Knight",
@@ -318,40 +332,43 @@ function showSkinPanel(k) {
 
   let tempSkin = gameConfig.player.skinIndex;
 
-  const subLabel = addFx(k, 111, "settingsMenu", "subPanel",
-    k.text(SUBTITLES[tempSkin], { size: 16, font: "monospace" }),
-    k.pos(px + pw / 2, py + 64), k.anchor("center"), k.color(...C.title), k.opacity(0.7));
+  const subLabel = addFx(k, 111, "skinPanel",
+    k.text(SUBTITLES[tempSkin], { size: 22, font: "monospace" }),
+    k.pos(px + pw / 2, py + 86), k.anchor("center"), k.color(...C.title), k.opacity(0.7));
 
-  addFx(k, 111, "settingsMenu", "subPanel",
-    k.rect(pw - 100, 2), k.pos(px + 50, py + 84),
+  addFx(k, 111, "skinPanel",
+    k.rect(pw - 100, 2), k.pos(px + 50, py + 108),
     k.color(...C.panelBorder), k.opacity(0.5));
 
-  // Skin Preview
-  const previewBox = addFx(k, 111, "settingsMenu", "subPanel",
-    k.rect(120, 120, { radius: 8 }), k.pos(px + pw / 2, py + 164), k.anchor("center"),
+  // Skin Preview — larger box
+  const previewCenterY = py + ph * 0.45;
+  const previewBox = addFx(k, 111, "skinPanel",
+    k.rect(160, 160, { radius: 10 }), k.pos(px + pw / 2, previewCenterY), k.anchor("center"),
     k.color(...C.itemBg), k.outline(2, k.rgb(...C.panelBorder)));
 
-  const spritePreview = addFx(k, 112, "settingsMenu", "subPanel", "previewSprite",
+  const spritePreview = addFx(k, 112, "skinPanel", "previewSprite",
     k.sprite(`skin_${tempSkin}`, { anim: "walk-down" }),
-    k.pos(px + pw / 2, py + 164), k.anchor("center"), k.scale(5));
+    k.pos(px + pw / 2, previewCenterY), k.anchor("center"), k.scale(6));
 
-  // Left Arrow
-  const lBtnShadow = addFx(k, 112, "settingsMenu", "subPanel",
-    k.rect(40, 40, { radius: 8 }), k.pos(px + 40 + 2, py + 144 + 4), k.color(...C.blueShad));
-  const lBtn = addFx(k, 113, "settingsMenu", "subPanel",
-    k.rect(40, 40, { radius: 8 }), k.area(), k.pos(px + 40, py + 144),
+  // Left Arrow — bigger
+  const arrowSize = 52;
+  const arrowY = previewCenterY - arrowSize / 2;
+  const lBtnShadow = addFx(k, 112, "skinPanel",
+    k.rect(arrowSize, arrowSize, { radius: 10 }), k.pos(px + 40 + 2, arrowY + 4), k.color(...C.blueShad));
+  const lBtn = addFx(k, 113, "skinPanel",
+    k.rect(arrowSize, arrowSize, { radius: 10 }), k.area(), k.pos(px + 40, arrowY),
     k.color(...C.blueFace), k.outline(2, k.rgb(...C.panelBorder)));
-  addFx(k, 114, "settingsMenu", "subPanel",
-    k.text("◀", { size: 18 }), k.pos(px + 60, py + 164), k.anchor("center"), k.color(...C.white));
+  addFx(k, 114, "skinPanel",
+    k.text("◀", { size: 24 }), k.pos(px + 40 + arrowSize / 2, arrowY + arrowSize / 2), k.anchor("center"), k.color(...C.white));
 
-  // Right Arrow
-  const rBtnShadow = addFx(k, 112, "settingsMenu", "subPanel",
-    k.rect(40, 40, { radius: 8 }), k.pos(px + pw - 80 + 2, py + 144 + 4), k.color(...C.blueShad));
-  const rBtn = addFx(k, 113, "settingsMenu", "subPanel",
-    k.rect(40, 40, { radius: 8 }), k.area(), k.pos(px + pw - 80, py + 144),
+  // Right Arrow — bigger
+  const rBtnShadow = addFx(k, 112, "skinPanel",
+    k.rect(arrowSize, arrowSize, { radius: 10 }), k.pos(px + pw - 40 - arrowSize + 2, arrowY + 4), k.color(...C.blueShad));
+  const rBtn = addFx(k, 113, "skinPanel",
+    k.rect(arrowSize, arrowSize, { radius: 10 }), k.area(), k.pos(px + pw - 40 - arrowSize, arrowY),
     k.color(...C.blueFace), k.outline(2, k.rgb(...C.panelBorder)));
-  addFx(k, 114, "settingsMenu", "subPanel",
-    k.text("▶", { size: 18 }), k.pos(px + pw - 60, py + 164), k.anchor("center"), k.color(...C.white));
+  addFx(k, 114, "skinPanel",
+    k.text("▶", { size: 24 }), k.pos(px + pw - 40 - arrowSize / 2, arrowY + arrowSize / 2), k.anchor("center"), k.color(...C.white));
 
   function updateSkin(dir) {
     tempSkin = (tempSkin + dir + 8) % 8;
@@ -367,18 +384,17 @@ function showSkinPanel(k) {
   lBtn.onClick(() => updateSkin(-1));
   rBtn.onClick(() => updateSkin(1));
 
-  // Action Buttons row
+  // Apply Button — bigger, centered
   const btnY = py + ph - 90;
 
-  // Apply Button
-  addFx(k, 112, "settingsMenu", "subPanel",
-    k.rect(140, 36, { radius: 7 }), k.pos(px + 30 + 2, btnY + 4), k.color(...C.purpleShad));
-  const applyBtn = addFx(k, 113, "settingsMenu", "subPanel",
-    k.rect(140, 36, { radius: 7 }), k.area(), k.pos(px + 30, btnY),
+  addFx(k, 112, "skinPanel",
+    k.rect(240, 44, { radius: 10 }), k.pos(px + pw / 2 - 120 + 2, btnY + 4), k.color(...C.purpleShad));
+  const applyBtn = addFx(k, 113, "skinPanel",
+    k.rect(240, 44, { radius: 10 }), k.area(), k.pos(px + pw / 2 - 120, btnY),
     k.color(...C.purpleFace), k.outline(2, k.rgb(...C.panelBorder)));
-  addFx(k, 114, "settingsMenu", "subPanel",
-    k.text("Apply Skin", { size: 16, font: "monospace" }),
-    k.pos(px + 100, btnY + 18), k.anchor("center"), k.color(...C.white));
+  addFx(k, 114, "skinPanel",
+    k.text("Apply Skin", { size: 22, font: "monospace" }),
+    k.pos(px + pw / 2, btnY + 22), k.anchor("center"), k.color(...C.white));
 
   applyBtn.onHoverUpdate(() => { document.body.style.cursor = "pointer"; });
   applyBtn.onHoverEnd(() => { document.body.style.cursor = "default"; });
@@ -388,14 +404,12 @@ function showSkinPanel(k) {
       p.use(k.sprite(`skin_${tempSkin}`, { anim: "idle-down" }));
     });
     // Visual pop to confirm
-    spritePreview.scale = k.vec2(6);
-    k.wait(0.1, () => { spritePreview.scale = k.vec2(5); });
+    spritePreview.scale = k.vec2(7);
+    k.wait(0.1, () => { spritePreview.scale = k.vec2(6); });
   });
-
-  buildBackButton(k, px + pw - 170, btnY + 3); // Slightly shifted back btn
 }
 
-// ── Creative Mode panel ──
+// ── Creative Mode panel (full overlay) ──
 // All slider definitions
 const ALL_SLIDERS = [
   ["Player Speed", "player.speed", 50, 800, 10, v => `${v}`],
@@ -420,34 +434,39 @@ function showCreativePanel(k) {
   creativePage = 0;
   creativeClickHandlers = [];
 
-  const pw = 440, ph = 480;
+  const pw = Math.floor(k.width() * 0.55), ph = Math.floor(k.height() * 0.9);
   const px = (k.width() - pw) / 2, py = (k.height() - ph) / 2;
 
+  // Dark overlay to cover settings behind
+  addFx(k, 115, "settingsMenu", "subPanel",
+    k.rect(k.width() * 3, k.height() * 3), k.pos(-k.width(), -k.height()),
+    k.color(0, 0, 0), k.opacity(0.7));
+
   // Glow
-  addFx(k, 108, "settingsMenu", "subPanel",
+  addFx(k, 116, "settingsMenu", "subPanel",
     k.rect(pw + 20, ph + 20, { radius: 18 }), k.pos(px - 10, py - 10),
     k.color(...C.purpleFace), k.opacity(0.18));
 
   // Panel
-  addFx(k, 109, "settingsMenu", "subPanel",
-    k.rect(pw + 4, ph + 6, { radius: 14 }), k.pos(px, py + 4),
+  addFx(k, 117, "settingsMenu", "subPanel",
+    k.rect(pw + 4, ph + 6, { radius: 16 }), k.pos(px, py + 4),
     k.color(...C.shadow), k.opacity(0.45));
-  addFx(k, 110, "settingsMenu", "subPanel",
-    k.rect(pw, ph, { radius: 12 }), k.pos(px, py),
+  addFx(k, 118, "settingsMenu", "subPanel",
+    k.rect(pw, ph, { radius: 14 }), k.pos(px, py),
     k.color(...C.panelBg), k.outline(4, k.rgb(...C.panelBorder)));
-  addFx(k, 110, "settingsMenu", "subPanel",
-    k.rect(pw - 20, ph - 20, { radius: 8 }), k.pos(px + 10, py + 10),
+  addFx(k, 118, "settingsMenu", "subPanel",
+    k.rect(pw - 24, ph - 24, { radius: 10 }), k.pos(px + 12, py + 12),
     k.color(...C.panelInner), k.outline(2, k.rgb(...C.separator)));
 
   // Title
-  addFx(k, 111, "settingsMenu", "subPanel",
-    k.text("🎨 CREATIVE MODE", { size: 24, font: "monospace" }),
-    k.pos(px + pw / 2, py + 34), k.anchor("center"), k.color(...C.title));
-  addFx(k, 111, "settingsMenu", "subPanel",
-    k.text("Adjust game stats live", { size: 12, font: "monospace" }),
-    k.pos(px + pw / 2, py + 56), k.anchor("center"), k.color(...C.title), k.opacity(0.55));
-  addFx(k, 111, "settingsMenu", "subPanel",
-    k.rect(pw - 60, 2), k.pos(px + 30, py + 68),
+  addFx(k, 119, "settingsMenu", "subPanel",
+    k.text("🎨 CREATIVE MODE", { size: 32, font: "monospace" }),
+    k.pos(px + pw / 2, py + 44), k.anchor("center"), k.color(...C.title));
+  addFx(k, 119, "settingsMenu", "subPanel",
+    k.text("Adjust game stats live", { size: 16, font: "monospace" }),
+    k.pos(px + pw / 2, py + 72), k.anchor("center"), k.color(...C.title), k.opacity(0.55));
+  addFx(k, 119, "settingsMenu", "subPanel",
+    k.rect(pw - 80, 2), k.pos(px + 40, py + 90),
     k.color(...C.panelBorder), k.opacity(0.5));
 
   // Build first page of sliders
@@ -455,31 +474,31 @@ function showCreativePanel(k) {
 
   // ── Page nav ──
   const totalPages = Math.ceil(ALL_SLIDERS.length / PER_PAGE);
-  const navY = py + ph - 100;
+  const navY = py + ph - 120;
 
   // ◀ button
-  addFx(k, 112, "settingsMenu", "subPanel",
-    k.rect(40, 32, { radius: 7 }), k.pos(px + pw / 2 - 90 + 2, navY + 3), k.color(...C.blueShad));
-  const prevBtn = addFx(k, 113, "settingsMenu", "subPanel",
-    k.rect(40, 32, { radius: 7 }), k.area(), k.pos(px + pw / 2 - 90, navY),
+  addFx(k, 119, "settingsMenu", "subPanel",
+    k.rect(48, 38, { radius: 8 }), k.pos(px + pw / 2 - 100 + 2, navY + 3), k.color(...C.blueShad));
+  const prevBtn = addFx(k, 120, "settingsMenu", "subPanel",
+    k.rect(48, 38, { radius: 8 }), k.area(), k.pos(px + pw / 2 - 100, navY),
     k.color(...C.blueFace), k.outline(2, k.rgb(...C.panelBorder)));
-  addFx(k, 114, "settingsMenu", "subPanel",
-    k.text("◀", { size: 18 }), k.pos(px + pw / 2 - 70, navY + 16),
+  addFx(k, 121, "settingsMenu", "subPanel",
+    k.text("◀", { size: 22 }), k.pos(px + pw / 2 - 76, navY + 19),
     k.anchor("center"), k.color(...C.white));
 
   // Page label
-  const pageLabel = addFx(k, 114, "settingsMenu", "subPanel",
-    k.text(`Page ${creativePage + 1} / ${totalPages}`, { size: 16, font: "monospace" }),
-    k.pos(px + pw / 2, navY + 16), k.anchor("center"), k.color(...C.dark));
+  const pageLabel = addFx(k, 121, "settingsMenu", "subPanel",
+    k.text(`Page ${creativePage + 1} / ${totalPages}`, { size: 20, font: "monospace" }),
+    k.pos(px + pw / 2, navY + 19), k.anchor("center"), k.color(...C.dark));
 
   // ▶ button
-  addFx(k, 112, "settingsMenu", "subPanel",
-    k.rect(40, 32, { radius: 7 }), k.pos(px + pw / 2 + 52, navY + 3), k.color(...C.blueShad));
-  const nextBtn = addFx(k, 113, "settingsMenu", "subPanel",
-    k.rect(40, 32, { radius: 7 }), k.area(), k.pos(px + pw / 2 + 50, navY),
+  addFx(k, 119, "settingsMenu", "subPanel",
+    k.rect(48, 38, { radius: 8 }), k.pos(px + pw / 2 + 56, navY + 3), k.color(...C.blueShad));
+  const nextBtn = addFx(k, 120, "settingsMenu", "subPanel",
+    k.rect(48, 38, { radius: 8 }), k.area(), k.pos(px + pw / 2 + 54, navY),
     k.color(...C.blueFace), k.outline(2, k.rgb(...C.panelBorder)));
-  addFx(k, 114, "settingsMenu", "subPanel",
-    k.text("▶", { size: 18 }), k.pos(px + pw / 2 + 70, navY + 16),
+  addFx(k, 121, "settingsMenu", "subPanel",
+    k.text("▶", { size: 22 }), k.pos(px + pw / 2 + 78, navY + 19),
     k.anchor("center"), k.color(...C.white));
 
   prevBtn.onHoverUpdate(() => { document.body.style.cursor = "pointer"; });
@@ -527,15 +546,15 @@ function showCreativePanel(k) {
   if (firstSub) firstSub.onDestroy(() => scrollHandler.cancel());
 
   // ── Bottom row: Reset + Back ──
-  const btnY = py + ph - 56;
-  addFx(k, 112, "settingsMenu", "subPanel",
-    k.rect(154, 32, { radius: 7 }), k.pos(px + 25 + 2, btnY + 3), k.color(...C.redShad));
-  const resetBtn = addFx(k, 113, "settingsMenu", "subPanel",
-    k.rect(154, 32, { radius: 7 }), k.area(), k.pos(px + 25, btnY),
+  const btnY = py + ph - 68;
+  addFx(k, 119, "settingsMenu", "subPanel",
+    k.rect(180, 38, { radius: 8 }), k.pos(px + pw / 2 - 200 + 2, btnY + 3), k.color(...C.redShad));
+  const resetBtn = addFx(k, 120, "settingsMenu", "subPanel",
+    k.rect(180, 38, { radius: 8 }), k.area(), k.pos(px + pw / 2 - 200, btnY),
     k.color(...C.redFace), k.outline(2, k.rgb(...C.panelBorder)));
-  addFx(k, 114, "settingsMenu", "subPanel",
-    k.text("Reset Defaults", { size: 14, font: "monospace" }),
-    k.pos(px + 25 + 77, btnY + 16), k.anchor("center"), k.color(...C.white));
+  addFx(k, 121, "settingsMenu", "subPanel",
+    k.text("Reset Defaults", { size: 18, font: "monospace" }),
+    k.pos(px + pw / 2 - 110, btnY + 19), k.anchor("center"), k.color(...C.white));
   resetBtn.onHoverUpdate(() => { document.body.style.cursor = "pointer"; });
   resetBtn.onHoverEnd(() => { document.body.style.cursor = "default"; });
   resetBtn.onClick(() => {
@@ -549,7 +568,7 @@ function showCreativePanel(k) {
     buildSliderPage(k, px, py, pw, ph);
   });
 
-  buildBackButton(k, px + pw / 2 + 10, btnY);
+  buildBackButton(k, px + pw / 2 + 20, btnY);
 }
 
 // ── Build one page of sliders ──
@@ -557,9 +576,9 @@ function buildSliderPage(k, px, py, pw, ph) {
   const start = creativePage * PER_PAGE;
   const pageSliders = ALL_SLIDERS.slice(start, start + PER_PAGE);
 
-  const slW = pw - 50, slH = 8, knobR = 10;
-  const slX = px + 25, slStartY = py + 82;
-  const rowH = 46;
+  const slW = pw - 60, slH = 10, knobR = 12;
+  const slX = px + 30, slStartY = py + 106;
+  const rowH = 56;
 
   pageSliders.forEach(([label, path, min, max, step, fmt], i) => {
     const y = slStartY + i * rowH;
@@ -567,31 +586,31 @@ function buildSliderPage(k, px, py, pw, ph) {
     const curVal = gameConfig[section][key];
 
     // Label
-    addFx(k, 112, "settingsMenu", "subPanel", "creativeSliders",
-      k.text(label, { size: 16, font: "monospace" }),
+    addFx(k, 119, "settingsMenu", "subPanel", "creativeSliders",
+      k.text(label, { size: 20, font: "monospace" }),
       k.pos(slX, y), k.anchor("left"), k.color(...C.dark));
 
     // Value (right-aligned)
-    const valText = addFx(k, 114, "settingsMenu", "subPanel", "creativeSliders",
-      k.text(fmt(curVal), { size: 16, font: "monospace" }),
+    const valText = addFx(k, 121, "settingsMenu", "subPanel", "creativeSliders",
+      k.text(fmt(curVal), { size: 20, font: "monospace" }),
       k.pos(slX + slW, y), k.anchor("right"), k.color(...C.purpleFace));
 
     // Track
     const trackX = slX;
     const trackW = slW;
-    const trackY = y + 22;
-    addFx(k, 112, "settingsMenu", "subPanel", "creativeSliders",
-      k.rect(trackW, slH, { radius: 4 }), k.pos(trackX, trackY),
+    const trackY = y + 28;
+    addFx(k, 119, "settingsMenu", "subPanel", "creativeSliders",
+      k.rect(trackW, slH, { radius: 5 }), k.pos(trackX, trackY),
       k.color(...C.sliderTrack));
 
     // Fill
     const fillRatio = (curVal - min) / (max - min);
-    const fill = addFx(k, 113, "settingsMenu", "subPanel", "creativeSliders",
-      k.rect(Math.max(0, trackW * fillRatio), slH, { radius: 4 }),
+    const fill = addFx(k, 120, "settingsMenu", "subPanel", "creativeSliders",
+      k.rect(Math.max(0, trackW * fillRatio), slH, { radius: 5 }),
       k.pos(trackX, trackY), k.color(...C.sliderFill));
 
     // Knob
-    const knob = addFx(k, 114, "settingsMenu", "subPanel", "creativeSliders",
+    const knob = addFx(k, 121, "settingsMenu", "subPanel", "creativeSliders",
       k.circle(knobR), k.area(),
       k.pos(trackX + trackW * fillRatio, trackY + slH / 2),
       k.anchor("center"), k.color(...C.white),
@@ -608,9 +627,9 @@ function buildSliderPage(k, px, py, pw, ph) {
     creativeClickHandlers.push(clickH);
 
     // Track click zone
-    const trackHit = addFx(k, 113, "settingsMenu", "subPanel", "creativeSliders",
-      k.rect(trackW, 26, { radius: 4 }), k.area(),
-      k.pos(trackX, trackY - 9), k.color(0, 0, 0), k.opacity(0));
+    const trackHit = addFx(k, 120, "settingsMenu", "subPanel", "creativeSliders",
+      k.rect(trackW, 30, { radius: 5 }), k.area(),
+      k.pos(trackX, trackY - 10), k.color(0, 0, 0), k.opacity(0));
     trackHit.onHoverUpdate(() => { document.body.style.cursor = "pointer"; });
     trackHit.onHoverEnd(() => { document.body.style.cursor = "default"; });
 
@@ -668,14 +687,14 @@ function applyLiveStats(k, section, key, val) {
 
 // ── Shared back button ──
 function buildBackButton(k, bx, by) {
-  addFx(k, 112, "settingsMenu", "subPanel",
-    k.rect(154, 30, { radius: 7 }), k.pos(bx + 2, by + 3), k.color(...C.greenShad));
-  const btn = addFx(k, 113, "settingsMenu", "subPanel",
-    k.rect(154, 30, { radius: 7 }), k.area(), k.pos(bx, by),
+  addFx(k, 119, "settingsMenu", "subPanel",
+    k.rect(180, 38, { radius: 8 }), k.pos(bx + 2, by + 3), k.color(...C.greenShad));
+  const btn = addFx(k, 120, "settingsMenu", "subPanel",
+    k.rect(180, 38, { radius: 8 }), k.area(), k.pos(bx, by),
     k.color(...C.greenFace), k.outline(2, k.rgb(...C.panelBorder)));
-  addFx(k, 114, "settingsMenu", "subPanel",
-    k.text("← Back", { size: 14, font: "monospace" }),
-    k.pos(bx + 77, by + 15), k.anchor("center"), k.color(...C.white));
+  addFx(k, 121, "settingsMenu", "subPanel",
+    k.text("← Back", { size: 18, font: "monospace" }),
+    k.pos(bx + 90, by + 19), k.anchor("center"), k.color(...C.white));
   btn.onHoverUpdate(() => { document.body.style.cursor = "pointer"; });
   btn.onHoverEnd(() => { document.body.style.cursor = "default"; });
   btn.onClick(() => closeSubPanel(k));
