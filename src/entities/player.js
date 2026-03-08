@@ -6,6 +6,7 @@ import { revivePet, isPetDead } from "./frog.js";
 import { createHealthBar } from "../ui/healthBar.js";
 import { createSkillBar } from "../ui/skillBar.js";
 import { gameConfig } from "../utils/constants.js";
+import { touchInput, isTouchMode, showTouchControls, consumeTouchTriggers } from "../ui/touchControls.js";
 
 export function createPlayer(k) {
     const skinSprite = `skin_${gameConfig.player.skinIndex}`;
@@ -41,6 +42,9 @@ export function setPlayerControls(k, player) {
     createHealthBar(k, player);
     createSkillBar(k, player);
 
+    // Show on-screen controls if touch mode is active
+    if (isTouchMode()) showTouchControls(k);
+
     // --- GAME LOOP UPDATE ---
     k.onUpdate(() => {
         if (player.mTimer > 0) player.mTimer -= k.dt();
@@ -62,10 +66,10 @@ export function setPlayerControls(k, player) {
         const speed = player.speed * getTimeScale();
         let dx = 0; let dy = 0;
 
-        if (k.isKeyDown("left") || k.isKeyDown("a")) dx = -1;
-        if (k.isKeyDown("right") || k.isKeyDown("d")) dx = 1;
-        if (k.isKeyDown("up") || k.isKeyDown("w")) dy = -1;
-        if (k.isKeyDown("down") || k.isKeyDown("s")) dy = 1;
+        if (k.isKeyDown("left") || k.isKeyDown("a") || touchInput.left) dx = -1;
+        if (k.isKeyDown("right") || k.isKeyDown("d") || touchInput.right) dx = 1;
+        if (k.isKeyDown("up") || k.isKeyDown("w") || touchInput.up) dy = -1;
+        if (k.isKeyDown("down") || k.isKeyDown("s") || touchInput.down) dy = 1;
 
         if (dx !== 0 || dy !== 0) {
             const moveVec = k.vec2(dx, dy).unit().scale(speed);
@@ -195,4 +199,51 @@ export function setPlayerControls(k, player) {
         if (nearTV) revivePet();
     });
     player.onDestroy(() => reviveListener.cancel());
+
+    // ── Touch input polling (runs each frame) ──
+    k.onUpdate(() => {
+        if (!isTouchMode()) return;
+        if (gameState.isPaused || player.isInDialogue) {
+            consumeTouchTriggers();
+            return;
+        }
+
+        if (touchInput.m && player.mTimer <= 0) {
+            player.mTimer = skills.m.cooldown;
+            performAttack(k, player, "slash", skills.m.damage);
+        }
+        if (touchInput.comma && player.commaTimer <= 0) {
+            player.commaTimer = skills.comma.cooldown;
+            player.color = k.rgb(255, 140, 0);
+            k.wait(skills.comma.windup, () => {
+                player.color = k.rgb(255, 255, 255);
+                performAttack(k, player, "heavy", skills.comma.damage);
+            });
+        }
+        if (touchInput.period && player.periodTimer <= 0) {
+            player.periodTimer = skills.period.cooldown;
+            k.play("shield", { volume: 0.5 });
+            const spin = k.add([
+                k.circle(50), k.pos(player.pos), k.anchor("center"),
+                k.color(0, 100, 255), k.opacity(0.5), k.area(),
+                "attack", { damage: player.damage + skills.period.damage }
+            ]);
+            k.wait(0.2, () => k.destroy(spin));
+        }
+        if (touchInput.slash && !gameState.isTimeStopped && player.slashTimer <= 0) {
+            k.play("zawarudo", { volume: 0.7 });
+            player.slashTimer = skills.slash.cooldown;
+            toggleTimeStop(k);
+        }
+        if (touchInput.tab) {
+            toggleInventory(k);
+        }
+        if (touchInput.t) {
+            const tvObjects = k.get("tv");
+            let nearTV = tvObjects.some(tv => player.pos.dist(tv.pos) < 50);
+            if (nearTV) revivePet();
+        }
+
+        consumeTouchTriggers();
+    });
 }

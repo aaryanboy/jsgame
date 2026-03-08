@@ -44,6 +44,9 @@ export const gameConfig = {
     bladeStormCD: 3.0,
     theWorldCD: 5.0,
   },
+  ui: {
+    controlMode: "keyboard",  // "keyboard" or "touch"
+  },
 };
 
 // ── Backwards-compatible named exports (point into gameConfig) ──

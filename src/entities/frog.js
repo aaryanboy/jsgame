@@ -194,7 +194,15 @@ export function createFrog(k, pos, player, restoreHealth = false) {
             player.critRate
         );
         frog.health -= damageDealt;
-        k.get("damageBox").forEach(b => b.trigger("showDamage", damageDealt, isLastHitCritical()));
+
+        k.get("damageBox").forEach(b => b.trigger("showDamage", damageDealt, isLastHitCritical(), frog.pos));
+
+        // Game feel: subtle shake + hit flash
+        k.shake(2);
+        frog.color = k.rgb(255, 100, 100);
+        k.wait(0.1, () => {
+            if (frog.exists()) frog.color = k.rgb(255, 255, 255);
+        });
 
         if (frog.health <= 0) {
             // Track death position and state

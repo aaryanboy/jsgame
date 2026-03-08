@@ -33,8 +33,8 @@ export function createDamageBox(k) {
     ]);
 
     // Exposure function to global or custom events if needed
-    // For now, we'll listen for a custom "showDamage" event on the container
-    container.on("showDamage", (dmg, isCrit) => {
+    // We listen for "showDamage" event on the container
+    container.on("showDamage", (dmg, isCrit, pos) => {
         damageValueText.text = isCrit ? `CRIT! ${dmg}` : dmg.toString();
         damageValueText.color = isCrit ? k.rgb(255, 50, 50) : k.rgb(255, 255, 255);
 
@@ -44,5 +44,29 @@ export function createDamageBox(k) {
         k.wait(0.5, () => {
             container.use(k.outline(3, k.rgb(100, 100, 120)));
         });
+
+        // ── Floating Combat Text ──
+        if (pos) {
+            const floatText = k.add([
+                k.text(isCrit ? `${dmg}!` : dmg.toString(), { size: isCrit ? 36 : 24, font: "monospace", weight: isCrit ? "bold" : "normal" }),
+                k.pos(pos.x, pos.y - 30),
+                k.anchor("center"),
+                k.color(isCrit ? 255 : 255, isCrit ? 50 : 255, isCrit ? 50 : 255),
+                k.opacity(1),
+                k.move(k.UP, isCrit ? 80 : 50),
+                { z: 200 }
+            ]);
+
+            // Fade out
+            floatText.onUpdate(() => {
+                floatText.opacity -= k.dt();
+                if (floatText.opacity <= 0) k.destroy(floatText);
+            });
+            // Small pop effect for crits
+            if (isCrit) {
+                floatText.use(k.scale(1.5));
+                k.wait(0.1, () => floatText.use(k.scale(1)));
+            }
+        }
     });
 }

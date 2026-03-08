@@ -51,14 +51,22 @@ export function setupBossLogic(k, boss, player) {
 
     // Collision/Combat logic
     k.onCollide("attack", "boss", (attack) => {
-        console.log("You hit the boss!");
         let totalDamage = calculateDamage(
             attack.damage,
             player.critDamage,
             player.critRate
         );
         boss.health -= totalDamage;
-        k.get("damageBox").forEach(b => b.trigger("showDamage", totalDamage, isLastHitCritical()));
+
+        // Feed hit data to UI and floating text
+        k.get("damageBox").forEach(b => b.trigger("showDamage", totalDamage, isLastHitCritical(), boss.pos));
+
+        // Game feel: screen shake + hit flash
+        k.shake(isLastHitCritical() ? 8 : 4);
+        boss.color = k.rgb(255, 100, 100);
+        k.wait(0.1, () => {
+            if (boss.exists()) boss.color = k.rgb(255, 255, 255);
+        });
 
         if (boss.health <= 0) {
             console.log("Boss defeated!");

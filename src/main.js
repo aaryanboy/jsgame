@@ -21,16 +21,19 @@ loadRoom(k, "boss");
 // 3. Start the Game
 k.scene("intro", () => {
     k.add([
-        k.text("Press Enter to Start", { size: 32 }),
+        k.text("Press Enter or Tap to Start", { size: 32 }),
         k.pos(k.center()),
         k.anchor("center"),
         k.color(255, 255, 255),
     ]);
 
-    k.onKeyPress("enter", () => {
+    const startGame = () => {
         gameState.bgm = k.play("bgm", { loop: true, volume: 0.5 });
         k.go("map");
-    });
+    };
+
+    k.onKeyPress("enter", startGame);
+    k.onClick(startGame);
 });
 
 k.go("intro");
@@ -43,13 +46,13 @@ k.scene("gameover", () => {
         k.color(255, 0, 0),
     ]);
     k.add([
-        k.text("Press Enter to Retry", { size: 24 }),
+        k.text("Press Enter or Tap to Retry", { size: 24 }),
         k.pos(k.center().add(0, 50)),
         k.anchor("center"),
         k.color(255, 255, 255),
     ]);
 
-    k.onKeyPress("enter", () => {
-        k.go("intro");
-    });
+    const retry = () => k.go("intro");
+    k.onKeyPress("enter", retry);
+    k.onClick(retry);
 });
