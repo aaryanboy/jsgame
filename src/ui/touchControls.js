@@ -82,33 +82,63 @@ export function showTouchControls(k, player) {
     let joyActive = false;
     let joyPointerId = null;
 
-    k.onPointerDown((pos, id) => {
-        // If they click/tap inside the joystick base area
-        const dist = pos.dist(k.vec2(joyX, joyY));
-        if (dist < joyR * 1.5 && !joyActive) {
-            joyActive = true;
-            joyPointerId = id;
-            updateJoystick(pos);
-        }
-    });
+    handle.onUpdate(() => {
+        let currentPos = null;
+        let isActiveNow = false;
 
-    k.onPointerMove((pos, id) => {
-        if (joyActive && id === joyPointerId) {
-            updateJoystick(pos);
+        // 1. Check true touches
+        if (k.getTouches) {
+            for (const t of k.getTouches()) {
+                if (joyActive && t.id === joyPointerId) {
+                    currentPos = t.pos;
+                    isActiveNow = true;
+                    break;
+                }
+                if (!joyActive) {
+                    const dist = t.pos.dist(k.vec2(joyX, joyY));
+                    if (dist < joyR * 1.5) {
+                        joyActive = true;
+                        joyPointerId = t.id;
+                        currentPos = t.pos;
+                        isActiveNow = true;
+                        break;
+                    }
+                }
+            }
         }
-    });
 
-    k.onPointerRelease((id) => {
-        if (joyActive && id === joyPointerId) {
-            joyActive = false;
-            joyPointerId = null;
-            // Snap back to center
-            handle.pos = k.vec2(joyX, joyY);
-            handle.opacity = 0.8;
-            touchInput.up = false;
-            touchInput.down = false;
-            touchInput.left = false;
-            touchInput.right = false;
+        // 2. Fallback to mouse dragging for desktop testing
+        if (!isActiveNow && k.isMouseDown("left")) {
+            const mPos = k.mousePos();
+            if (joyActive && joyPointerId === "mouse") {
+                currentPos = mPos;
+                isActiveNow = true;
+            } else if (!joyActive) {
+                const dist = mPos.dist(k.vec2(joyX, joyY));
+                if (dist < joyR * 1.5) {
+                    joyActive = true;
+                    joyPointerId = "mouse";
+                    currentPos = mPos;
+                    isActiveNow = true;
+                }
+            }
+        }
+
+        // 3. Process movement or release
+        if (isActiveNow && currentPos) {
+            updateJoystick(currentPos);
+        } else {
+            if (joyActive) {
+                joyActive = false;
+                joyPointerId = null;
+                // Snap back to center
+                handle.pos = k.vec2(joyX, joyY);
+                handle.opacity = 0.8;
+                touchInput.up = false;
+                touchInput.down = false;
+                touchInput.left = false;
+                touchInput.right = false;
+            }
         }
     });
 
