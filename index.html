@@ -54,10 +54,19 @@
 
     .ui-close-btn {
       font-family: inherit;
-      border-style: none;
-      border-radius: 3px;
-      padding: 1rem;
-      font-size: inherit;
+      border: 2px solid #555;
+      background-color: #333;
+      color: white;
+      border-radius: 6px;
+      padding: 0.5rem 1.5rem;
+      font-size: 1.2rem;
+      cursor: pointer;
+      box-shadow: 2px 2px 0px #111;
+    }
+
+    .ui-close-btn:active {
+      transform: translateY(2px);
+      box-shadow: 0px 0px 0px #111;
     }
 
     .btn-container {
@@ -97,7 +106,7 @@
         <div id="textbox">
           <p id="dialogue" class="ui-text"></p>
           <div class="btn-container">
-            <button id="close" class="ui-close-btn">X</button>
+            <button id="close" class="ui-close-btn">Next ▶</button>
           </div>
         </div>
       </div>

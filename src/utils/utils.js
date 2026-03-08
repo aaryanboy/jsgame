@@ -26,15 +26,20 @@ export function displayDialogue(text, onDisplayEnd) {
     }
   }
 
-  function onCloseBtnClick() {
+  function onCloseBtnClick(e) {
+    if (e) e.preventDefault(); // Prevent double-firing from click/touchstart
     onDisplayEnd();
     dialogueUI.style.display = "none";
     dialogue.innerHTML = "";
     clearInterval(intervalRef);
     removeEventListener("keydown", onKeyDown);
+    closeBtn.removeEventListener("click", onCloseBtnClick);
+    closeBtn.removeEventListener("touchstart", onCloseBtnClick);
   }
 
   addEventListener("keydown", onKeyDown);
+  closeBtn.addEventListener("click", onCloseBtnClick);
+  closeBtn.addEventListener("touchstart", onCloseBtnClick, { passive: false });
 }
 
 export function setCamScale(k) {
