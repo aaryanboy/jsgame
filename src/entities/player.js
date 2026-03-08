@@ -7,6 +7,7 @@ import { createHealthBar } from "../ui/healthBar.js";
 import { createSkillBar } from "../ui/skillBar.js";
 import { gameConfig } from "../utils/constants.js";
 import { touchInput, isTouchMode, showTouchControls, consumeTouchTriggers } from "../ui/touchControls.js";
+import { createGlobalHUD } from "../ui/globalHUD.js";
 
 export function createPlayer(k) {
     const skinSprite = `skin_${gameConfig.player.skinIndex}`;
@@ -41,6 +42,7 @@ export function setPlayerControls(k, player) {
     // --- UI COMPONENTS (modular) ---
     createHealthBar(k, player);
     createSkillBar(k, player);
+    createGlobalHUD(k, player);
 
     // Show on-screen controls if touch mode is active
     if (isTouchMode()) showTouchControls(k);

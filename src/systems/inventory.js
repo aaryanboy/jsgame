@@ -4,6 +4,7 @@ import { petState } from "./persistentPet.js";
 import { gameConfig } from "../utils/constants.js";
 import { getLayout } from "../ui/settingsLayout.js";
 import { showTouchControls, hideTouchControls } from "../ui/touchControls.js";
+import { showGlobalHUD, hideGlobalHUD } from "../ui/globalHUD.js";
 
 // ── Retro Color Palette ──
 const C = {
@@ -56,6 +57,7 @@ function closeMenu(k) {
   selectedIndex = 0;
   toggleRefs = {};
   showTouchControls(k); // Restore touch controls if applicable
+  showGlobalHUD(k);     // Restore HUD
   document.body.style.cursor = "default";
 }
 
@@ -71,6 +73,7 @@ function closeSubPanel(k) {
 function openMenu(k) {
   setGamePause(k, true);
   hideTouchControls(k); // Hide touch controls while menu is active
+  hideGlobalHUD(k);     // Hide HUD while menu is active
   selectedIndex = 0;
   subPanelOpen = false;
 

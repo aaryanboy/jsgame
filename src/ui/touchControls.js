@@ -125,25 +125,6 @@ export function showTouchControls(k) {
         const sy = atkY + Math.sin(angle) * arcDist;
         makeActionButton(k, sx, sy, skillR, key, label, color);
     });
-
-    // ── Utility Buttons (Tab / T) — top corners ──
-    const utilSize = Math.round(base * 0.06);
-
-    // Tab (settings) — top-left
-    const tabBtn = makeUtilBtn(k, Math.round(w * 0.06), Math.round(h * 0.06), utilSize, "⚙", [180, 160, 140]);
-    tabBtn.onClick(() => {
-        touchInput.tab = true;
-        tabBtn.opacity = 0.9;
-        k.wait(0.15, () => { if (tabBtn.exists()) tabBtn.opacity = 0.5; });
-    });
-
-    // T (revive) — top-right
-    const tBtn = makeUtilBtn(k, Math.round(w * 0.94), Math.round(h * 0.06), utilSize, "T", [100, 200, 100]);
-    tBtn.onClick(() => {
-        touchInput.t = true;
-        tBtn.opacity = 0.9;
-        k.wait(0.15, () => { if (tBtn.exists()) tBtn.opacity = 0.5; });
-    });
 }
 
 function makeActionButton(k, x, y, r, key, label, color) {
@@ -186,44 +167,6 @@ function makeActionButton(k, x, y, r, key, label, color) {
         btn.opacity = 0.9;
         k.wait(0.15, () => { if (btn.exists()) btn.opacity = 0.6; });
     });
-}
-
-function makeUtilBtn(k, x, y, size, label, color) {
-    k.add([
-        k.rect(size, size, { radius: Math.round(size * 0.25) }),
-        k.pos(x + 1, y + 2),
-        k.anchor("center"),
-        k.color(30, 30, 30),
-        k.opacity(0.3),
-        k.fixed(),
-        { z: 200 },
-        "touchControl",
-    ]);
-
-    const btn = k.add([
-        k.rect(size, size, { radius: Math.round(size * 0.25) }),
-        k.pos(x, y),
-        k.anchor("center"),
-        k.area(),
-        k.color(...color),
-        k.opacity(0.5),
-        k.outline(2, k.rgb(200, 200, 200)),
-        k.fixed(),
-        { z: 201 },
-        "touchControl",
-    ]);
-
-    k.add([
-        k.text(label, { size: Math.round(size * 0.45), font: "monospace" }),
-        k.pos(x, y),
-        k.anchor("center"),
-        k.color(255, 255, 255),
-        k.fixed(),
-        { z: 202 },
-        "touchControl",
-    ]);
-
-    return btn;
 }
 
 export function hideTouchControls(k) {
