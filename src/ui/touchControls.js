@@ -131,8 +131,8 @@ export function showTouchControls(k, player) {
         if (dist > maxDist) {
             diff = diff.scale(maxDist / dist);
         }
-        // Micro-shift: Move slightly in the direction of the touch to feel responsive
-        handle.pos = k.vec2(joyX, joyY).add(diff.scale(0.25)); 
+        // Perfectly static: The handle no longer shifts physically.
+        handle.pos = k.vec2(joyX, joyY); 
 
         const deadzone = maxDist * 0.2;
         touchInput.up = diff.y < -deadzone;
