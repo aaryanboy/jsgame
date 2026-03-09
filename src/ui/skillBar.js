@@ -10,92 +10,74 @@ export function createSkillBar(k, player) {
     const skillTimerKeys = ['mTimer', 'commaTimer', 'periodTimer', 'slashTimer'];
     const skillData = [skills.m, skills.comma, skills.period, skills.slash];
 
-    // Simple rectangular dimensions
-    const iconWidth = 200;
-    const iconHeight = 30;
-    const spacing = 5;
-    const startX = k.width() - iconWidth - 20;
-    const startY = 55;
+    // LoL Style Layout Dimensions
+    const iconSize = 56;
+    const spacing = 8;
+    const totalWidth = (iconSize * 4) + (spacing * 3);
 
     skillKeys.forEach((key, index) => {
-        const x = startX;
-        const y = startY + index * (iconHeight + spacing);
         const skill = skillData[index];
         const timerKey = skillTimerKeys[index];
         const baseColor = k.rgb(...skill.iconColor);
 
         const container = k.add([
-            k.pos(x, y),
+            k.pos(0, 0), // Set dynamically in onUpdate
             k.fixed(),
             { z: 100 }
         ]);
 
-        // Background bar
+        // Background square icon
         container.add([
-            k.rect(iconWidth, iconHeight, { radius: 4 }),
-            k.color(40, 40, 50),
-            k.outline(2, k.Color.WHITE)
+            k.rect(iconSize, iconSize, { radius: 6 }),
+            k.color(baseColor),
+            k.outline(3, k.rgb(30, 30, 40))
         ]);
 
-        // Key badge on left
+        // Keybind letter at bottom left
         container.add([
-            k.rect(30, iconHeight, { radius: 4 }),
-            k.pos(0, 0),
-            k.color(baseColor)
-        ]);
-
-        container.add([
-            k.text(key.toUpperCase(), { size: 16, font: "monospace" }),
-            k.pos(15, iconHeight / 2),
-            k.anchor("center"),
-            k.color(255, 255, 255)
-        ]);
-
-        // Skill name in center
-        container.add([
-            k.text(skill.name, { size: 14, font: "monospace" }),
-            k.pos(iconWidth / 2 + 10, iconHeight / 2),
-            k.anchor("center"),
+            k.text(key.toUpperCase(), { size: 14, font: "monospace", weight: "bold" }),
+            k.pos(5, iconSize - 16),
             k.color(255, 255, 255)
         ]);
 
         // Cooldown overlay
         const overlay = container.add([
-            k.rect(iconWidth, iconHeight, { radius: 4 }),
+            k.rect(iconSize, iconSize, { radius: 6 }),
             k.color(0, 0, 0),
             k.opacity(0),
             k.pos(0, 0)
         ]);
 
-        // Cooldown timer
+        // Cooldown timer text
         const cdText = container.add([
-            k.text("", { size: 16, font: "monospace" }),
-            k.pos(iconWidth - 25, iconHeight / 2),
+            k.text("", { size: 28, font: "monospace", weight: "bold" }),
+            k.pos(iconSize / 2, iconSize / 2),
             k.anchor("center"),
             k.color(255, 255, 0)
         ]);
 
         container.onUpdate(() => {
+            // Keep centered horizontally at the bottom, just beneath health bar
+            const startX = Math.round(k.width() / 2 - totalWidth / 2);
+            const startY = Math.round(k.height() - 65);
+            container.pos.x = startX + index * (iconSize + spacing);
+            container.pos.y = startY;
+
             const timer = player[timerKey];
 
             if (key === '/' && gameState.isTimeStopped) {
-                overlay.opacity = 0.4;
-                overlay.width = iconWidth;
-                cdText.text = "ACTIVE";
-                cdText.color = k.rgb(147, 112, 219); // Purple
+                overlay.opacity = 0.5;
+                cdText.text = "ACT";
+                cdText.color = k.rgb(147, 112, 219); // Purple processing state
                 return;
             }
 
             if (timer > 0) {
-                const totalCD = skill.cooldown;
-                const ratio = timer / totalCD;
-                overlay.opacity = 0.6;
-                overlay.width = iconWidth * ratio;
-                cdText.text = timer.toFixed(1);
-                cdText.color = k.rgb(255, 255, 0); // Reset to yellow
+                overlay.opacity = 0.65;
+                cdText.text = Math.ceil(timer).toString();
+                cdText.color = k.rgb(240, 220, 50); // Warning Yellow
             } else {
                 overlay.opacity = 0;
-                overlay.width = 0;
                 cdText.text = "";
             }
         });

@@ -98,5 +98,22 @@ export function loadAssets(k) {
     k.loadSound("zawarudo", "/attackmusic/za-warudo-dio-the-world.mp3");
     k.loadSound("shield", "/attackmusic/shield.mp3");
 
+    k.loadSprite("joystick", "./joystick.png", {
+        sliceX: 9, sliceY: 1,
+        anims: {
+            "knob": 4, // Middle (Idle)
+            "up": 1, "down": 7, "left": 3, "right": 5,
+            "up-left": 0, "up-right": 2, "down-left": 6, "down-right": 8,
+        }
+    });
+
+    k.loadSprite("ui-buttons", "./joystick.png", {
+        sliceX: 10, sliceY: 10,
+        anims: {
+            "a": 10, "b": 11, "x": 12, "y": 13,
+            "r1": 4, "r2": 14, "l1": 6, "l2": 16,
+        }
+    });
+
     k.setBackground(k.Color.fromHex("#311047"));
 }

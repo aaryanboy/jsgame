@@ -29,6 +29,8 @@ let touchPlayer = null;
 
 export function showTouchControls(k, player) {
     if (player) touchPlayer = player;
+    if (!touchPlayer) touchPlayer = k.get("player")[0];
+    
     hideTouchControls(k);
     if (!isTouchMode()) return;
 
@@ -40,39 +42,12 @@ export function showTouchControls(k, player) {
     const joyX = Math.round(w * 0.16);
     const joyY = Math.round(h * 0.75);
 
-    // Joystick Base
-    k.add([
-        k.circle(joyR),
-        k.pos(joyX + 2, joyY + 4),
-        k.anchor("center"),
-        k.color(20, 20, 20),
-        k.opacity(0.4),
-        k.fixed(),
-        { z: 200 },
-        "touchControl",
-    ]);
-
-    k.add([
-        k.circle(joyR),
-        k.pos(joyX, joyY),
-        k.anchor("center"),
-        k.color(50, 60, 70),
-        k.opacity(0.35),
-        k.outline(3, k.rgb(120, 130, 150)),
-        k.fixed(),
-        { z: 201 },
-        "touchControl",
-    ]);
-
-    // Draggable Joystick Handle
-    const handleR = Math.round(joyR * 0.4);
+    // Draggable Joystick Handle (Static, only changes tiles)
     const handle = k.add([
-        k.circle(handleR),
+        k.sprite("joystick", { anim: "knob" }),
         k.pos(joyX, joyY),
         k.anchor("center"),
-        k.color(200, 210, 220),
-        k.opacity(0.8),
-        k.outline(2, k.rgb(255, 255, 255)),
+        k.scale(base * 0.0035), // Slightly larger since it's floating
         k.fixed(),
         { z: 205 },
         "touchControl",
@@ -88,38 +63,45 @@ export function showTouchControls(k, player) {
 
         // 1. Check true touches
         if (k.getTouches) {
-            for (const t of k.getTouches()) {
-                if (joyActive && t.id === joyPointerId) {
-                    currentPos = t.pos;
-                    isActiveNow = true;
-                    break;
-                }
-                if (!joyActive) {
-                    const dist = t.pos.dist(k.vec2(joyX, joyY));
-                    if (dist < joyR * 1.5) {
-                        joyActive = true;
-                        joyPointerId = t.id;
-                        currentPos = t.pos;
+            for (const pos of k.getTouches()) {
+                const tPos = pos.pos ? pos.pos : pos;
+                const tId = pos.id !== undefined ? pos.id : k.getTouches().indexOf(pos);
+                
+                if (tPos.x < w / 2) {
+                    if (joyActive && tId === joyPointerId) {
+                        currentPos = tPos;
                         isActiveNow = true;
                         break;
+                    }
+                    if (!joyActive) {
+                        const dist = tPos.dist(k.vec2(joyX, joyY));
+                        if (dist < joyR * 1.5) {
+                            joyActive = true;
+                            joyPointerId = tId;
+                            currentPos = tPos;
+                            isActiveNow = true;
+                            break;
+                        }
                     }
                 }
             }
         }
 
-        // 2. Fallback to mouse dragging for desktop testing
+        // 2. Fallback to mouse dragging
         if (!isActiveNow && k.isMouseDown("left")) {
             const mPos = k.mousePos();
-            if (joyActive && joyPointerId === "mouse") {
-                currentPos = mPos;
-                isActiveNow = true;
-            } else if (!joyActive) {
-                const dist = mPos.dist(k.vec2(joyX, joyY));
-                if (dist < joyR * 1.5) {
-                    joyActive = true;
-                    joyPointerId = "mouse";
+            if (mPos.x < w / 2) {
+                if (joyActive && joyPointerId === "mouse") {
                     currentPos = mPos;
                     isActiveNow = true;
+                } else if (!joyActive) {
+                    const dist = mPos.dist(k.vec2(joyX, joyY));
+                    if (dist < joyR * 1.5) {
+                        joyActive = true;
+                        joyPointerId = "mouse";
+                        currentPos = mPos;
+                        isActiveNow = true;
+                    }
                 }
             }
         }
@@ -131,9 +113,8 @@ export function showTouchControls(k, player) {
             if (joyActive) {
                 joyActive = false;
                 joyPointerId = null;
-                // Snap back to center
                 handle.pos = k.vec2(joyX, joyY);
-                handle.opacity = 0.8;
+                handle.play("knob"); // Back to neutral
                 touchInput.up = false;
                 touchInput.down = false;
                 touchInput.left = false;
@@ -143,50 +124,56 @@ export function showTouchControls(k, player) {
     });
 
     function updateJoystick(pos) {
-        handle.opacity = 1.0;
         let diff = pos.sub(k.vec2(joyX, joyY));
         let dist = diff.len();
-        const maxDist = joyR - handleR * 0.5;
+        const maxDist = joyR - 10;
 
-        // Clamp handle to joystick base
         if (dist > maxDist) {
             diff = diff.scale(maxDist / dist);
         }
-        handle.pos = k.vec2(joyX, joyY).add(diff);
+        // Micro-shift: Move slightly in the direction of the touch to feel responsive
+        handle.pos = k.vec2(joyX, joyY).add(diff.scale(0.25)); 
 
-        // Determine directions based on thresholds
-        // We use a deadzone of roughly 20% to prevent drift
         const deadzone = maxDist * 0.2;
-
         touchInput.up = diff.y < -deadzone;
         touchInput.down = diff.y > deadzone;
         touchInput.left = diff.x < -deadzone;
         touchInput.right = diff.x > deadzone;
+
+        // Visual direction feedback mapping to new sprites
+        if (touchInput.up && touchInput.right) handle.play("up-right");
+        else if (touchInput.up && touchInput.left) handle.play("up-left");
+        else if (touchInput.down && touchInput.right) handle.play("down-right");
+        else if (touchInput.down && touchInput.left) handle.play("down-left");
+        else if (touchInput.up) handle.play("up");
+        else if (touchInput.down) handle.play("down");
+        else if (touchInput.left) handle.play("left");
+        else if (touchInput.right) handle.play("right");
+        else handle.play("knob");
     }
 
-    // ── MOBA Action Buttons (Right) ──
-    const atkR = Math.round(base * 0.12);
-    const atkX = Math.round(w * 0.88);
-    const atkY = Math.round(h * 0.78);
+    // ── Pixel Art Action Buttons (Right) ──
+    const atkR = Math.round(base * 0.14);
+    const atkX = Math.round(w * 0.86);
+    const atkY = Math.round(h * 0.76);
 
     // Basic Attack Button
     makeActionButton(k, atkX, atkY, atkR, "m", "ATK", [255, 70, 50], 'mTimer');
 
     // Skills Arc
-    const arcDist = Math.round(base * 0.22);
-    const skillR = Math.round(base * 0.065);
+    const arcDist = Math.round(base * 0.25);
+    const skillR = Math.round(base * 0.08);
 
-    // Angles: 0 is Right, PI is Left, -PI/2 is Up. We want an arc from Left to Up.
     const skills = [
-        { key: "comma", label: "S1", color: [40, 180, 255], angle: Math.PI, timerKey: "commaTimer" },                // Left
-        { key: "period", label: "S2", color: [255, 170, 30], angle: Math.PI * 1.25, timerKey: "periodTimer" },        // Top-Left
-        { key: "slash", label: "ULT", color: [160, 50, 255], angle: Math.PI * 1.5, timerKey: "slashTimer" },         // Top
+        { key: "comma", label: "S1", angle: Math.PI, timerKey: "commaTimer" },
+        { key: "period", label: "S2", angle: Math.PI * 1.25, timerKey: "periodTimer" },
+        { key: "slash", label: "ULT", angle: Math.PI * 1.5, timerKey: "slashTimer" },
     ];
 
-    skills.forEach(({ key, label, color, angle, timerKey }) => {
+    skills.forEach(({ key, label, angle, timerKey }) => {
         const sx = atkX + Math.cos(angle) * arcDist;
         const sy = atkY + Math.sin(angle) * arcDist;
-        makeActionButton(k, sx, sy, skillR, key, label, color, timerKey);
+        makeActionButton(k, sx, sy, skillR, key, label, [40, 180, 255], timerKey);
     });
 }
 
@@ -208,7 +195,7 @@ function makeActionButton(k, x, y, r, key, label, color, timerKey) {
         k.anchor("center"),
         k.area(),
         k.color(...color),
-        k.opacity(0.6),
+        k.opacity(0.5),
         k.outline(3, k.rgb(220, 220, 230)),
         k.fixed(),
         { z: 201 },
@@ -253,7 +240,7 @@ function makeActionButton(k, x, y, r, key, label, color, timerKey) {
 
         // Custom logic for ULT (The World)
         if (key === 'slash' && gameState.isTimeStopped) {
-            cdOverlay.opacity = 0.4;
+            cdOverlay.opacity = 0.5;
             cdText.text = "ACT";
             cdText.color = k.rgb(147, 112, 219); // Purple
             isOnCooldown = true;
@@ -261,9 +248,9 @@ function makeActionButton(k, x, y, r, key, label, color, timerKey) {
             const timer = touchPlayer[timerKey];
             if (timer > 0) {
                 isOnCooldown = true;
-                cdOverlay.opacity = 0.6;
-                cdText.text = timer.toFixed(1);
-                cdText.color = k.rgb(255, 255, 0); // Yellow
+                cdOverlay.opacity = 0.65;
+                cdText.text = Math.ceil(timer).toString();
+                cdText.color = k.rgb(240, 220, 50); // Yellow
             } else {
                 cdOverlay.opacity = 0;
                 cdText.text = "";

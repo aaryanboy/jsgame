@@ -116,11 +116,9 @@ function openMenu(k) {
 
   // ── Menu items ──
   const musicIsOn = gameState.bgm ? gameState.bgm.volume > 0 : true;
-  const isTouch = gameConfig.ui.controlMode === "touch";
   menuItems = [
     { type: "btn", label: `Music: ${musicIsOn ? "ON" : "OFF"}`, color: musicIsOn ? "green" : "red", action: "music" },
-    { type: "btn", label: `Input: ${isTouch ? "Touch" : "Keyboard"}`, color: isTouch ? "purple" : "blue", action: "controlmode" },
-    { type: "btn", label: "Controls", color: "blue", action: "controls" },
+    { type: "dualtoggle", action: "controlmode" },
     { type: "btn", label: "Creative Mode 🎨", color: "purple", action: "creative" },
   ];
 
@@ -128,25 +126,59 @@ function openMenu(k) {
 
   menuItems.forEach((item, i) => {
     const y = S.itemStartY + i * (S.itemH + S.itemGap);
-    const { face: fc, shad: sc } = btnColors(item);
 
-    addFx(k, 101, "settingsMenu",
-      k.rect(S.itemW, S.itemH, { radius: R.item }), k.pos(S.itemX + 2, y + 4), k.color(...sc));
+    if (item.type === "dualtoggle") {
+      // ── Dual Toggle Switch UI (Cooler Input Selector) ──
+      // Dark track with inner shadow effect
+      addFx(k, 101, "settingsMenu",
+        k.rect(S.itemW, S.itemH, { radius: R.item }), k.pos(S.itemX + 2, y + 4), k.color(...C.shadow), k.opacity(0.3));
+      
+      const face = addFx(k, 102, "settingsMenu", "menuFace_" + i,
+        k.rect(S.itemW, S.itemH, { radius: R.item }), k.area(), k.pos(S.itemX, y),
+        k.color(35, 30, 25), k.outline(2, k.rgb(...C.panelBorder)));
 
-    const face = addFx(k, 102, "settingsMenu", "menuFace_" + i,
-      k.rect(S.itemW, S.itemH, { radius: R.item }), k.area(), k.pos(S.itemX, y),
-      k.color(...fc), k.outline(2, k.rgb(...C.panelBorder)));
+      const isTouch = gameConfig.ui.controlMode === "touch";
+      const pillW = S.itemW / 2;
+      const pillX = S.itemX + (isTouch ? pillW : 0);
+      const pillColor = isTouch ? C.purpleFace : C.blueFace;
 
-    const tColor = item.action === "music" ? C.white : C.white;
-    const labelText = addFx(k, 103, "settingsMenu", `menuLabel_${i}`,
-      k.text(item.label, { size: F.button, font: "monospace" }),
-      k.pos(S.itemX + S.itemW / 2, y + S.itemH / 2), k.anchor("center"), k.color(...tColor));
+      // Active selected segment (The Pill)
+      addFx(k, 103, "settingsMenu", "controlPill",
+        k.rect(pillW, S.itemH, { radius: R.item }),
+        k.pos(pillX, y),
+        k.color(...pillColor),
+        k.outline(2, k.rgb(...C.panelBorder))
+      );
 
-    face.onHoverUpdate(() => {
-      if (!subPanelOpen) { selectedIndex = i; document.body.style.cursor = "pointer"; }
-    });
-    face.onHoverEnd(() => { document.body.style.cursor = "default"; });
-    face.onClick(() => { if (!subPanelOpen) { selectedIndex = i; activate(k); } });
+      // Segment Texts
+      addFx(k, 104, "settingsMenu",
+        k.text("⌨ PC", { size: F.button - 4, font: "monospace", weight: "bold" }),
+        k.pos(S.itemX + pillW / 2, y + S.itemH / 2), k.anchor("center"), k.color(...(isTouch ? [120, 110, 100] : C.white))
+      );
+      addFx(k, 104, "settingsMenu",
+        k.text("🖐 Touch", { size: F.button - 4, font: "monospace", weight: "bold" }),
+        k.pos(S.itemX + pillW + pillW / 2, y + S.itemH / 2), k.anchor("center"), k.color(...(isTouch ? C.white : [120, 110, 100]))
+      );
+
+      face.onClick(() => { if (!subPanelOpen) { selectedIndex = i; activate(k, true); } });
+
+    } else {
+      // ── Standard Button UI ──
+      const { face: fc, shad: sc } = btnColors(item);
+
+      addFx(k, 101, "settingsMenu",
+        k.rect(S.itemW, S.itemH, { radius: R.item }), k.pos(S.itemX + 2, y + 4), k.color(...sc));
+
+      const face = addFx(k, 102, "settingsMenu", "menuFace_" + i,
+        k.rect(S.itemW, S.itemH, { radius: R.item }), k.area(), k.pos(S.itemX, y),
+        k.color(...fc), k.outline(2, k.rgb(...C.panelBorder)));
+
+      const labelText = addFx(k, 103, "settingsMenu", `menuLabel_${i}`,
+        k.text(item.label, { size: F.button, font: "monospace" }),
+        k.pos(S.itemX + S.itemW / 2, y + S.itemH / 2), k.anchor("center"), k.color(...C.white));
+
+      face.onClick(() => { if (!subPanelOpen) { selectedIndex = i; activate(k, true); } });
+    }
   });
 
   // ── Split bottom buttons (Resume / Restart) ──
@@ -170,43 +202,9 @@ function openMenu(k) {
       k.text(item.label, { size: F.button, font: "monospace" }),
       k.pos(item.x + S.splitBtnW / 2, S.splitBtnY + S.itemH / 2), k.anchor("center"), k.color(...C.white));
 
-    face.onHoverUpdate(() => {
-      if (!subPanelOpen) { selectedIndex = item.i; document.body.style.cursor = "pointer"; }
-    });
-    face.onHoverEnd(() => { document.body.style.cursor = "default"; });
-    face.onClick(() => { if (!subPanelOpen) { selectedIndex = item.i; activate(k); } });
+    face.onClick(() => { if (!subPanelOpen) { selectedIndex = item.i; activate(k, true); } });
   });
 
-  // Selector arrow
-  const selector = addFx(k, 105, "settingsMenu",
-    k.text("▶", { size: F.selector }), k.pos(S.itemX - 28, S.itemStartY + S.itemH / 2),
-    k.anchor("center"), k.color(...C.gold));
-
-  selector.onUpdate(() => {
-    let tx, ty;
-    if (selectedIndex < menuItems.length - 2) {
-      ty = S.itemStartY + selectedIndex * (S.itemH + S.itemGap) + S.itemH / 2;
-      tx = S.itemX - 28 + Math.sin(k.time() * 5) * 4;
-    } else {
-      const btnItem = splitBtns[selectedIndex - (menuItems.length - 2)];
-      ty = S.splitBtnY + S.itemH / 2;
-      tx = btnItem.x - 24 + Math.sin(k.time() * 5) * 4;
-    }
-    selector.pos.y = k.lerp(selector.pos.y, ty, 0.25);
-    selector.pos.x = k.lerp(selector.pos.x, tx, 0.25);
-  });
-
-  // Selected outline updater
-  addFx(k, 90, "settingsMenu", k.pos(0, 0), {
-    update() {
-      for (let i = 0; i < menuItems.length; i++) {
-        k.get("menuFace_" + i).forEach(f => {
-          f.outline.color = i === selectedIndex ? k.rgb(...C.gold) : k.rgb(...C.panelBorder);
-          f.outline.width = i === selectedIndex ? 3 : 2;
-        });
-      }
-    }
-  });
 
   // Footer
   addFx(k, 101, "settingsMenu",
@@ -220,7 +218,7 @@ function openMenu(k) {
   handlers.push(k.onKeyPress("w", nav(-1)));
   handlers.push(k.onKeyPress("down", nav(1)));
   handlers.push(k.onKeyPress("s", nav(1)));
-  handlers.push(k.onKeyPress("enter", () => activate(k)));
+  handlers.push(k.onKeyPress("enter", () => activate(k, false)));
   handlers.push(k.onKeyPress("escape", () => { if (subPanelOpen) closeSubPanel(k); else closeMenu(k); }));
 
   // Always show skin panel on the right
@@ -228,7 +226,7 @@ function openMenu(k) {
 }
 
 // ── Activate ──
-function activate(k) {
+function activate(k, isClick = false) {
   if (subPanelOpen) { closeSubPanel(k); return; }
   const item = menuItems[selectedIndex];
   if (!item) return;
@@ -248,17 +246,30 @@ function activate(k) {
       break;
     case "controlmode": {
       const wasTouch = gameConfig.ui.controlMode === "touch";
-      gameConfig.ui.controlMode = wasTouch ? "keyboard" : "touch";
-      const nowTouch = !wasTouch;
-      k.get(`menuLabel_${selectedIndex}`).forEach(l => l.text = `Input: ${nowTouch ? "Touch" : "Keyboard"}`);
-      k.get(`menuFace_${selectedIndex}`).forEach(f => {
-        f.color = nowTouch ? k.rgb(...C.purpleFace) : k.rgb(...C.blueFace);
-      });
+      let nowTouch;
+
+      if (isClick && k.mousePos) {
+        // Differentiate by click position (Segmented Control behavior)
+        const mPos = k.mousePos();
+        const L = getLayout(k.width(), k.height());
+        const S = L.settings;
+        nowTouch = mPos.x > (S.itemX + S.itemW / 2);
+        if (wasTouch === nowTouch) break; 
+      } else {
+        // Keyboard behavior (Simple Flip)
+        nowTouch = !wasTouch;
+      }
+
+      gameConfig.ui.controlMode = nowTouch ? "touch" : "keyboard";
+      
       if (nowTouch) showTouchControls(k); else hideTouchControls(k);
+
+      closeMenu(k);
+      openMenu(k);
+      selectedIndex = 1; 
       break;
     }
     case "resume": closeMenu(k); break;
-    case "controls": showControlsPanel(k); break;
     case "creative": showCreativePanel(k); break;
     case "restart":
       if (gameState.bgm) { gameState.bgm.stop(); gameState.bgm = null; }
@@ -275,63 +286,6 @@ function activate(k) {
   }
 }
 
-// ── Controls sub-panel (full overlay) ──
-function showControlsPanel(k) {
-  subPanelOpen = true;
-  const L = getLayout(k.width(), k.height());
-  const P = L.sub;
-  const F = L.fontSize;
-  const R = L.radius;
-
-  // Dark overlay to cover settings behind
-  addFx(k, 115, "settingsMenu", "subPanel",
-    k.rect(k.width() * 3, k.height() * 3), k.pos(-k.width(), -k.height()),
-    k.color(0, 0, 0), k.opacity(0.7));
-
-  addFx(k, 116, "settingsMenu", "subPanel",
-    k.rect(P.w + 4, P.h + 6, { radius: R.panel + 2 }), k.pos(P.x, P.y + 4),
-    k.color(...C.shadow), k.opacity(0.4));
-  addFx(k, 117, "settingsMenu", "subPanel",
-    k.rect(P.w, P.h, { radius: R.panel }), k.pos(P.x, P.y),
-    k.color(...C.panelBg), k.outline(4, k.rgb(...C.panelBorder)));
-  addFx(k, 117, "settingsMenu", "subPanel",
-    k.rect(P.w - 24, P.h - 24, { radius: R.inner }), k.pos(P.x + 12, P.y + 12),
-    k.color(...C.panelInner), k.outline(2, k.rgb(...C.separator)));
-  addFx(k, 118, "settingsMenu", "subPanel",
-    k.text("CONTROLS", { size: F.title, font: "monospace" }),
-    k.pos(P.x + P.w / 2, P.titleY), k.anchor("center"), k.color(...C.title));
-  addFx(k, 118, "settingsMenu", "subPanel",
-    k.rect(P.w - 80, 2), k.pos(P.x + 40, P.lineY),
-    k.color(...C.panelBorder), k.opacity(0.5));
-
-  const isTouch = gameConfig.ui.controlMode === "touch";
-  const controls = isTouch ? [
-    ["D-Pad", "Move"], ["M", "Swift Slash"], [",", "Titan Cleave"],
-    [".", "Blade Storm"], ["/", "The World"], ["T", "Revive Pet"],
-    ["Tap", "Dialogue/Start"], ["⚙", "Settings"], ["Esc", "Close Menu"],
-  ] : [
-    ["WASD", "Move"], ["M", "Swift Slash"], [",", "Titan Cleave"],
-    [".", "Blade Storm"], ["/", "The World"], ["T", "Revive Pet"],
-    ["Space", "Dialogue"], ["Tab", "Settings"], ["Esc", "Close Menu"],
-  ];
-
-  const lx = P.x + 40, sy = P.contentStartY;
-  controls.forEach(([key, desc], i) => {
-    const y = sy + i * P.controlRowH;
-    addFx(k, 119, "settingsMenu", "subPanel",
-      k.rect(P.controlKeyW, P.controlKeyH, { radius: R.btn }), k.pos(lx + 1, y + 2), k.color(...C.blueShad));
-    addFx(k, 120, "settingsMenu", "subPanel",
-      k.rect(P.controlKeyW, P.controlKeyH, { radius: R.btn }), k.pos(lx, y), k.color(...C.blueFace));
-    addFx(k, 121, "settingsMenu", "subPanel",
-      k.text(key, { size: F.label, font: "monospace" }),
-      k.pos(lx + P.controlKeyW / 2, y + P.controlKeyH / 2), k.anchor("center"), k.color(...C.white));
-    addFx(k, 120, "settingsMenu", "subPanel",
-      k.text(desc, { size: F.subtitle, font: "monospace" }),
-      k.pos(lx + P.controlKeyW + 20, y + P.controlKeyH / 2), k.anchor("left"), k.color(...C.dark));
-  });
-
-  buildBackButton(k, P.x + P.w / 2 - P.actionBtnW / 2, P.actionBtnY, L);
-}
 
 // ── Skin Selection Panel (always visible on the RIGHT) ──
 function showSkinPanel(k, L) {
