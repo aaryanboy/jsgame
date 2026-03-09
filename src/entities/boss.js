@@ -1,7 +1,12 @@
-import { scaleFactor } from "../utils/constants.js";
-import { setupBossAI } from "../systems/bossAI.js";
-import { calculateDamage, isLastHitCritical } from "../systems/damage.js";
+import { scaleFactor, gameConfig } from "../utils/constants.js";
+import { createEntityHealthBar } from "../ui/entityHealthBar.js";
 
+/**
+ * Creates a boss entity with stats from gameConfig.
+ * Combat logic is now handled by enemyRegistry.js — use createEnemy("Boss", ...) for new spawns.
+ * This factory is kept for backward compatibility and for cases where you need
+ * the raw entity without the registry's combat/AI wiring.
+ */
 export function createBoss(k) {
     const boss = k.make([
         k.sprite("boss", { anim: "idle-down" }),
@@ -12,80 +17,22 @@ export function createBoss(k) {
         k.scale(scaleFactor),
         { z: 2 },
         {
-            health: 100,
-            damage: 20,
-            speed: 100,
+            health: gameConfig.boss.health,
+            maxHealth: gameConfig.boss.health,
+            damage: gameConfig.boss.damage,
+            speed: gameConfig.boss.speed,
         },
         "boss",
+        "enemy",
     ]);
 
-    // Add Health Bar
-    const barWidth = 40;
-    const barHeight = 4;
-
-    // Background (Red)
-    boss.add([
-        k.rect(barWidth, barHeight),
-        k.pos(-barWidth / 2, -20),
-        k.color(255, 0, 0),
-    ]);
-
-    // Foreground (Green)
-    const hpBar = boss.add([
-        k.rect(barWidth, barHeight),
-        k.pos(-barWidth / 2, -20),
-        k.color(0, 255, 0),
-    ]);
-
-    // Update HP Bar
-    hpBar.onUpdate(() => {
-        hpBar.width = barWidth * (boss.health / 100);
+    // Reusable health bar component
+    createEntityHealthBar(k, boss, {
+        maxHealth: gameConfig.boss.health,
+        barWidth: 40,
+        barHeight: 4,
+        yOffset: -20,
     });
 
     return boss;
-}
-
-export function setupBossLogic(k, boss, player) {
-    // Advanced Boss AI
-    setupBossAI(k, boss, player);
-
-    // Collision/Combat logic
-    k.onCollide("attack", "boss", (attack) => {
-        let totalDamage = calculateDamage(
-            attack.damage,
-            player.critDamage,
-            player.critRate
-        );
-        boss.health -= totalDamage;
-
-        // Feed hit data to UI and floating text
-        k.get("damageBox").forEach(b => b.trigger("showDamage", totalDamage, isLastHitCritical(), boss.pos));
-
-        // Game feel: screen shake + hit flash
-        k.shake(isLastHitCritical() ? 8 : 4);
-        boss.color = k.rgb(255, 100, 100);
-        k.wait(0.1, () => {
-            if (boss.exists()) boss.color = k.rgb(255, 255, 255);
-        });
-
-        if (boss.health <= 0) {
-            console.log("Boss defeated!");
-            k.destroy(boss);
-
-            // Victory Message
-            k.add([
-                k.text("VICTORY!", { size: 64, font: "monospace" }),
-                k.pos(k.center()),
-                k.anchor("center"),
-                k.color(255, 215, 0), // Gold
-                k.fixed(),
-                { z: 100 }
-            ]);
-
-            // Teleport back to base after delay
-            k.wait(3, () => {
-                k.go("map");
-            });
-        }
-    });
 }

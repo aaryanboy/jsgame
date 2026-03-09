@@ -12,13 +12,6 @@ export const petState = {
     currentHealth: 50,    // Track health across maps
 };
 
-/**
- * Check if pet is currently dead
- * @returns {boolean}
- */
-export function isPetDead() {
-    return petState.isDead;
-}
 
 /**
  * Check if the pet is close enough to the player to transition
@@ -49,11 +42,9 @@ export function checkPetTransition(player) {
 
     if (distance <= MAX_FOLLOW_DISTANCE) {
         petState.shouldPersist = true;
-        console.log("Pet is close enough. Will follow.");
         return true;
     } else {
         petState.shouldPersist = false;
-        console.log("Pet is too far! It stays behind.");
         return false;
     }
 }
@@ -78,13 +69,9 @@ export function spawnPetInNewRoom(k, player, createFrogFn) {
     const pet = createFrogFn(k, spawnPos, player, true);
     k.add(pet);
 
-    console.log("Pet spawned in new room with health:", petState.currentHealth);
     return pet;
 }
 
 /**
  * Reset persistence (e.g. on death or revive)
  */
-export function setPetPersistence(value) {
-    petState.shouldPersist = value;
-}

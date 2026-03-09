@@ -1,52 +1,51 @@
 import { dialogueData, scaleFactor } from "../utils/constants.js";
 import { displayDialogue, setCamScale } from "../utils/utils.js";
 import { createPlayer, setPlayerControls } from "../entities/player.js";
-import { createBoss, setupBossLogic } from "../entities/boss.js";
-import { setupEnemyMovement } from "../systems/enemyMovement.js";
 import { createFrog } from "../entities/frog.js";
 import { petState, spawnPetInNewRoom, checkPetTransition } from "../systems/persistentPet.js";
 import { createDamageBox } from "../ui/damageBox.js";
 import { resetTimeStop } from "../systems/timeStop.js";
+import { createEnemy, ENEMY_REGISTRY } from "../systems/enemyRegistry.js";
 
 export const roomData = {
     main: {
         name: "main",
         sprite: "mainroom",
-        jjson: "./mainroom.json",
+        mapPath: "./mainroom.json",
     },
     map: {
         name: "map",
         sprite: "maproom",
-        jjson: "./map.json",
+        mapPath: "./map.json",
     },
     area: {
         name: "area",
         sprite: "maparea",
-        jjson: "./maparea.json",
+        mapPath: "./maparea.json",
     },
     boss: {
         name: "boss",
         sprite: "bossroom",
-        jjson: "./bossroom.json",
+        mapPath: "./bossroom.json",
     },
 };
 
 // Track the desired spawn point for next scene load
 let nextSpawnPoint = "player";
 
-export function loadRoom(k, roomName, spawnPoint = "player") {
+export function loadRoom(k, roomName) {
     k.scene(roomName, async () => {
-        // Reset time stop state immediately on room load
         resetTimeStop();
 
-        // Use the tracked spawn point for this scene
+        // Use the tracked spawn point, then reset for next load
         const currentSpawnPoint = nextSpawnPoint;
-        nextSpawnPoint = "player"; // Reset for next load
+        nextSpawnPoint = "player";
+
         const room = roomData[roomName];
-        const mapData = await (await fetch(room.jjson)).json();
+        const mapData = await (await fetch(room.mapPath)).json();
         const layers = mapData.layers;
 
-        // Add room background
+        // Room background
         const map = k.add([
             k.sprite(room.sprite),
             k.pos(0),
@@ -54,19 +53,9 @@ export function loadRoom(k, roomName, spawnPoint = "player") {
             { z: 0 },
         ]);
 
-        // Variables to hold entities created in this scene
         let player = null;
-        let enemy = null;
-        let persistentPet = null;
 
-        // We need to define these beforehand so we can use them in the loop
-        const pcBoundary = k.make([
-            k.area({ shape: new k.Rect(k.vec2(0), 100, 50) }),
-            k.pos(),
-            "pc",
-        ]);
-
-        // Extra decoration for specific room
+        // Extra foreground decoration
         if (roomName === "area") {
             k.add([
                 k.sprite("tree"),
@@ -76,8 +65,9 @@ export function loadRoom(k, roomName, spawnPoint = "player") {
             ]);
         }
 
-        // Process Layers
+        // ── Process Tiled map layers ──
         for (const layer of layers) {
+            // Boundary layer — static collision objects
             if (layer.name === "boundaries") {
                 for (const boundary of layer.objects) {
                     k.add([
@@ -95,19 +85,13 @@ export function loadRoom(k, roomName, spawnPoint = "player") {
                         ),
                         boundary.name,
                     ]);
-
-                    // We attach collision logic to the player LATER once player is defined?
-                    // No, we need to do it after player exists.
-                    // Since "spawnpoints" usually comes AFTER "boundaries" in Tiled JSON, we might have an issue if we try to attach immediately.
-                    // BUT, we can attach to 'player' tag essentially, or wait until player is created.
-                    // Actually, k.onCollide works with tags. So we don't need the specific player object instance for the event definition!
-                    // Replace `player.onCollide` with `k.onCollide("player", ...)`
                 }
                 continue;
             }
 
+            // Spawnpoint layer — entities
             if (layer.name === "spawnpoints") {
-                // First, find the correct spawn point position
+                // First pass: find player spawn positions
                 let playerSpawnPos = null;
                 let returnSpawnPos = null;
 
@@ -126,10 +110,9 @@ export function loadRoom(k, roomName, spawnPoint = "player") {
                     }
                 }
 
-                // Create player at the appropriate spawn point
+                // Create player
                 if (playerSpawnPos) {
                     player = createPlayer(k);
-                    // Use return spawn if requested and available, otherwise use player spawn
                     if (currentSpawnPoint === "return" && returnSpawnPos) {
                         player.pos = returnSpawnPos;
                     } else {
@@ -137,120 +120,86 @@ export function loadRoom(k, roomName, spawnPoint = "player") {
                     }
                     k.add(player);
 
-                    // Sync pet state global references for the new room
+                    // Sync global pet references for new room
                     petState.kaboom = k;
                     petState.player = player;
-                    // Reset currentPet reference for the new room since old objects are destroyed
                     petState.currentPet = null;
 
                     setPlayerControls(k, player);
-
-                    // Attempt to spawn persistent pet (pass createFrog as dependency)
-                    persistentPet = spawnPetInNewRoom(k, player, createFrog);
+                    spawnPetInNewRoom(k, player, createFrog);
                     createDamageBox(k);
                 }
 
-                // Now handle other spawn entities
+                // Second pass: spawn entities
                 for (const entity of layer.objects) {
+                    if (entity.name === "player" || entity.name === "return") continue;
 
-                    // Boss Entity
-                    if (entity.name === "Boss") {
-                        enemy = createBoss(k);
-                        enemy.pos = k.vec2(
-                            (map.pos.x + entity.x) * scaleFactor,
-                            (map.pos.y + entity.y) * scaleFactor
-                        );
-                        k.add(enemy);
+                    const entityPos = k.vec2(
+                        (map.pos.x + entity.x) * scaleFactor,
+                        (map.pos.y + entity.y) * scaleFactor
+                    );
+
+                    // ── Dynamic enemy spawning via registry ──
+                    // Any spawn name matching an ENEMY_REGISTRY key is auto-spawned.
+                    // To add a new enemy type: add to ENEMY_REGISTRY + place in Tiled map.
+                    if (ENEMY_REGISTRY[entity.name]) {
                         if (player) {
-                            setupBossLogic(k, enemy, player);
+                            const enemy = createEnemy(k, entity.name, entityPos, player);
+                            if (enemy) k.add(enemy);
                         }
                         continue;
                     }
 
-                    // Pet Entity ( Friendly / No Combat )
+                    // Pet / Frog companion
                     if (entity.name === "pet" || entity.name === "frog") {
-                        // If persistent pet logic is active (alive or dead), skip map spawn
                         if (petState.shouldPersist) continue;
-
-                        const startPos = k.vec2(
-                            (map.pos.x + entity.x) * scaleFactor,
-                            (map.pos.y + entity.y) * scaleFactor
-                        );
-
-                        // We use the createFrog for both pet and frog for now as they share sprites/logic
-                        // logic is inside createFrog now
-                        const mob = createFrog(k, startPos, player);
-
-                        // If it's specifically "pet", we might want to tag it as pet if needed, 
-                        // but the new module tags it as "frog". 
-                        // Let's ensure we add it to the scene.
-                        k.add(mob);
+                        const pet = createFrog(k, entityPos, player);
+                        k.add(pet);
+                        continue;
                     }
 
-                    if (entity.name === "pc") {
-                        pcBoundary.pos = k.vec2(
-                            (map.pos.x + entity.x) * scaleFactor,
-                            (map.pos.y + entity.y) * scaleFactor
-                        );
-                        k.add(pcBoundary);
+                    // Interactable boundary (e.g. PC / TV objects)
+                    if (entity.name === "pc" || entity.name === "tv") {
+                        k.add([
+                            k.area({ shape: new k.Rect(k.vec2(0), 100, 50) }),
+                            k.pos(entityPos),
+                            entity.name,
+                        ]);
                     }
                 }
             }
         }
 
         setCamScale(k);
-        k.onResize(() => {
-            setCamScale(k);
-        });
+        k.onResize(() => setCamScale(k));
 
-        // Setup Global boundary collisions for this scene
-        // We use "player" tag which is attached to the player entity.
+        // ── Room exit transitions ──
+        // Each exit tag triggers a scene change. The new scene is already
+        // registered in main.js so we just k.go() — no re-registration needed.
+        const EXIT_MAP = {
+            exit_to_map: "map",
+            exit_to_area: "area",
+            exit_to_boss: "boss",
+            exit_to_main: "main",
+        };
 
-        // Exit Transitions
-        k.onCollide("player", "exit_to_map", () => {
-            checkPetTransition(player); // Check if pet should follow
-            k.destroyAll();
-            nextSpawnPoint = "return"; // Use return spawn when coming back
-            loadRoom(k, "map");
-            k.go("map");
-        });
-        k.onCollide("player", "exit_to_area", () => {
-            checkPetTransition(player);
-            k.destroyAll();
-            loadRoom(k, "area");
-            k.go("area");
-        });
-        k.onCollide("player", "exit_to_boss", () => {
-            checkPetTransition(player);
-            k.destroyAll();
-            loadRoom(k, "boss");
-            k.go("boss");
-        });
-        k.onCollide("player", "exit_to_main", () => {
-            checkPetTransition(player);
-            k.destroyAll();
-            loadRoom(k, "main");
-            k.go("main");
-        });
+        for (const [exitTag, targetRoom] of Object.entries(EXIT_MAP)) {
+            k.onCollide("player", exitTag, () => {
+                if (player) checkPetTransition(player);
+                // Set return spawn for specific transitions
+                if (exitTag === "exit_to_map") nextSpawnPoint = "return";
+                k.go(targetRoom);
+            });
+        }
 
-        // Dialogue Interations
-        // We iterate over all boundary names that have dialogue
+        // ── Dialogue interactions ──
         for (const [key, value] of Object.entries(dialogueData)) {
-            // If a boundary has this name, we attach listener
-            // But we don't know if the boundary exists in this room without iterating boundaries again.
-            // It's safer to just Listen for ANY collision with something that has dialogue data.
-
-            // However, Kaboom onCollide needs a specific tag.
-            // The boundaries were created with `boundary.name` as a tag!
             k.onCollide("player", key, () => {
-                // Logic to show dialogue
-                // We need access to the player object to set 'isInDialogue'
                 if (player) {
                     player.isInDialogue = true;
                     displayDialogue(value, () => (player.isInDialogue = false));
                 }
             });
         }
-
     });
 }

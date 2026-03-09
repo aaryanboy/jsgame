@@ -26,7 +26,6 @@ export function setupEnemyMovement(k, enemy, movementSpeed) {
       if (moveOrStop === 1) {
         // Generate a random direction vector (x, y between -1 and 1)
         moveDirection = k.vec2(k.rand(-1, 1), k.rand(-1, 1)).unit(); // Normalize for consistent speed
-        console.log("Moving in direction:", moveDirection);
 
         // Determine and play the movement animation based on direction
         if (Math.abs(moveDirection.y) > Math.abs(moveDirection.x)) {
@@ -53,7 +52,6 @@ export function setupEnemyMovement(k, enemy, movementSpeed) {
       } else if (moveOrStop === 2) {
         // No movement
         moveDirection = k.vec2(0, 0);
-        console.log("Enemy stays still.");
 
         // Play the idle animation based on the last direction
         switch (lastDirection) {
@@ -71,7 +69,7 @@ export function setupEnemyMovement(k, enemy, movementSpeed) {
             break;
         }
       } else {
-        console.log("Enemy pathing logic can go here.");
+        // Placeholder for custom AI pathing logic
         // Add custom pathing or map-specific logic here
       }
 

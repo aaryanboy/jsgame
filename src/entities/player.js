@@ -1,11 +1,10 @@
-import { scaleFactor, skills, playerinfo } from "../utils/constants.js";
+import { scaleFactor, skills, playerinfo, gameConfig } from "../utils/constants.js";
 import { gameState } from "../utils/utils.js";
-import { toggleInventory } from "../systems/inventory.js";
+import { toggleSettingsMenu } from "../systems/settingsMenu.js";
 import { toggleTimeStop, getTimeScale } from "../systems/timeStop.js";
-import { revivePet, isPetDead } from "./frog.js";
+import { revivePet } from "./frog.js";
 import { createHealthBar } from "../ui/healthBar.js";
 import { createSkillBar } from "../ui/skillBar.js";
-import { gameConfig } from "../utils/constants.js";
 import { touchInput, isTouchMode, showTouchControls, consumeTouchTriggers } from "../ui/touchControls.js";
 import { createGlobalHUD } from "../ui/globalHUD.js";
 
@@ -27,6 +26,7 @@ export function createPlayer(k) {
             damage: playerinfo.damage,
             critRate: playerinfo.critRate,
             critDamage: playerinfo.critDamage,
+            isInvulnerable: false,
             mTimer: 0,
             commaTimer: 0,
             periodTimer: 0,
@@ -39,15 +39,66 @@ export function createPlayer(k) {
 }
 
 export function setPlayerControls(k, player) {
-    // --- UI COMPONENTS (modular) ---
+    // ── UI Components ──
     createHealthBar(k, player);
     createSkillBar(k, player);
     createGlobalHUD(k, player);
-
-    // Show on-screen controls if touch mode is active
     if (isTouchMode()) showTouchControls(k);
 
-    // --- GAME LOOP UPDATE ---
+    // ── Shared skill execution functions ──
+    // These are used by BOTH keyboard and touch handlers to avoid duplication.
+
+    function executeSwiftSlash() {
+        if (player.mTimer > 0) return;
+        player.mTimer = skills.m.cooldown;
+        performAttack(k, player, "slash", skills.m.damage);
+    }
+
+    function executeTitanCleave() {
+        if (player.commaTimer > 0) return;
+        player.commaTimer = skills.comma.cooldown;
+        player.color = k.rgb(255, 140, 0);
+        k.wait(skills.comma.windup, () => {
+            player.color = k.rgb(255, 255, 255);
+            performAttack(k, player, "heavy", skills.comma.damage);
+        });
+    }
+
+    function executeBladeStorm() {
+        if (player.periodTimer > 0) return;
+        player.periodTimer = skills.period.cooldown;
+        k.play("shield", { volume: 0.5 });
+        const spin = k.add([
+            k.circle(50),
+            k.pos(player.pos),
+            k.anchor("center"),
+            k.color(0, 100, 255),
+            k.opacity(0.5),
+            k.area(),
+            "attack",
+            { damage: player.damage + skills.period.damage },
+        ]);
+        k.wait(0.2, () => k.destroy(spin));
+    }
+
+    function executeTheWorld() {
+        if (gameState.isTimeStopped || player.slashTimer > 0) return;
+        k.play("zawarudo", { volume: 0.7 });
+        player.slashTimer = skills.slash.cooldown;
+        toggleTimeStop(k);
+    }
+
+    function executeSettingsToggle() {
+        toggleSettingsMenu(k);
+    }
+
+    function executeRevive() {
+        const tvObjects = k.get("tv");
+        const nearTV = tvObjects.some(tv => player.pos.dist(tv.pos) < 50);
+        if (nearTV) revivePet();
+    }
+
+    // ── Game Loop ──
     k.onUpdate(() => {
         if (player.mTimer > 0) player.mTimer -= k.dt();
         if (player.commaTimer > 0) player.commaTimer -= k.dt();
@@ -60,12 +111,11 @@ export function setPlayerControls(k, player) {
         }
         k.camPos(player.pos);
 
-        // Player can still move during time stop - only pause and dialogue block movement
         if (gameState.isPaused || player.isInDialogue) return;
 
-        // Player speed is affected by time scale (slows down and stops)
         const speed = player.speed * getTimeScale();
-        let dx = 0; let dy = 0;
+        let dx = 0;
+        let dy = 0;
 
         if (k.isKeyDown("left") || k.isKeyDown("a") || touchInput.left) dx = -1;
         if (k.isKeyDown("right") || k.isKeyDown("d") || touchInput.right) dx = 1;
@@ -98,69 +148,45 @@ export function setPlayerControls(k, player) {
         }
     });
 
-    // --- CONTROLS ---
+    // ── Keyboard controls ──
+    function guardedAction(fn) {
+        return () => {
+            if (gameState.isPaused || player.isInDialogue) return;
+            fn();
+        };
+    }
 
-    // M: Swift Slash
-    const mListener = k.onKeyPress("m", () => {
-        if (gameState.isPaused || player.isInDialogue || player.mTimer > 0) return;
-        player.mTimer = skills.m.cooldown;
-        performAttack(k, player, "slash", skills.m.damage);
+    const listeners = [
+        k.onKeyPress("m", guardedAction(executeSwiftSlash)),
+        k.onKeyPress(",", guardedAction(executeTitanCleave)),
+        k.onKeyPress(".", guardedAction(executeBladeStorm)),
+        k.onKeyPress("/", guardedAction(executeTheWorld)),
+        k.onKeyPress("tab", executeSettingsToggle),
+        k.onKeyPress("t", guardedAction(executeRevive)),
+    ];
+
+    // Cancel all keyboard listeners when player is destroyed
+    player.onDestroy(() => listeners.forEach(l => l.cancel()));
+
+    // ── Touch input polling (shared skill functions — no duplication) ──
+    k.onUpdate(() => {
+        if (!isTouchMode()) return;
+        if (gameState.isPaused || player.isInDialogue) {
+            consumeTouchTriggers();
+            return;
+        }
+
+        if (touchInput.m) executeSwiftSlash();
+        if (touchInput.comma) executeTitanCleave();
+        if (touchInput.period) executeBladeStorm();
+        if (touchInput.slash) executeTheWorld();
+        if (touchInput.tab) executeSettingsToggle();
+        if (touchInput.t) executeRevive();
+
+        consumeTouchTriggers();
     });
-    player.onDestroy(() => mListener.cancel());
 
-    // , (Comma): Titan Cleave
-    const commaListener = k.onKeyPress(",", () => {
-        if (gameState.isPaused || player.isInDialogue || player.commaTimer > 0) return;
-        player.commaTimer = skills.comma.cooldown;
-
-        player.color = k.rgb(255, 140, 0);
-        k.wait(skills.comma.windup, () => {
-            player.color = k.rgb(255, 255, 255);
-            performAttack(k, player, "heavy", skills.comma.damage);
-        });
-    });
-    player.onDestroy(() => commaListener.cancel());
-
-    // . (Period): Blade Storm
-    const periodListener = k.onKeyPress(".", () => {
-        if (gameState.isPaused || player.isInDialogue || player.periodTimer > 0) return;
-        player.periodTimer = skills.period.cooldown;
-
-        // Play shield sound
-        k.play("shield", { volume: 0.5 });
-
-        const spin = k.add([
-            k.circle(50),
-            k.pos(player.pos),
-            k.anchor("center"),
-            k.color(0, 100, 255),
-            k.opacity(0.5),
-            k.area(),
-            "attack",
-            { damage: player.damage + skills.period.damage }
-        ]);
-        k.wait(0.2, () => k.destroy(spin));
-    });
-    player.onDestroy(() => periodListener.cancel());
-
-    // / (Slash): Chrono Stasis - "The World"
-    const slashListener = k.onKeyPress("/", () => {
-        if (player.isInDialogue) return;
-        if (gameState.isTimeStopped) return; // Can't use while already active
-        if (player.slashTimer > 0) return; // Cooldown check
-
-        // Play ZA WARUDO sound
-        k.play("zawarudo", { volume: 0.7 });
-
-        // Start cooldown immediately upon activation
-        player.slashTimer = skills.slash.cooldown;
-
-        // Activate time stop (will auto-resume after 5 seconds)
-        toggleTimeStop(k);
-    });
-    player.onDestroy(() => slashListener.cancel());
-
-
+    // ── Attack helper ──
     function performAttack(k, player, type, damage) {
         let offset = k.vec2(0, 0);
         let anim = "";
@@ -174,77 +200,17 @@ export function setPlayerControls(k, player) {
         }
 
         const attackSprite = k.add([
-            k.sprite("attack", { anim: anim }),
+            k.sprite("attack", { anim }),
             k.pos(player.pos.add(offset)),
             k.anchor("center"),
             k.scale(type === "heavy" ? scaleFactor * 1.5 : scaleFactor),
             k.area(),
             { z: 6 },
             "attack",
-            { damage: player.damage + damage }
+            { damage: player.damage + damage },
         ]);
         attackSprite.flipX = flipX;
 
         k.wait(0.3, () => k.destroy(attackSprite));
     }
-
-    // Inventory
-    const inventoryListener = k.onKeyPress("tab", () => toggleInventory(k));
-    player.onDestroy(() => inventoryListener.cancel());
-
-    // Revive
-    const reviveListener = k.onKeyPress("t", () => {
-        if (player.isInDialogue || gameState.isPaused) return;
-        const tvObjects = k.get("tv");
-        let nearTV = tvObjects.some(tv => player.pos.dist(tv.pos) < 50);
-        if (nearTV) revivePet();
-    });
-    player.onDestroy(() => reviveListener.cancel());
-
-    // ── Touch input polling (runs each frame) ──
-    k.onUpdate(() => {
-        if (!isTouchMode()) return;
-        if (gameState.isPaused || player.isInDialogue) {
-            consumeTouchTriggers();
-            return;
-        }
-
-        if (touchInput.m && player.mTimer <= 0) {
-            player.mTimer = skills.m.cooldown;
-            performAttack(k, player, "slash", skills.m.damage);
-        }
-        if (touchInput.comma && player.commaTimer <= 0) {
-            player.commaTimer = skills.comma.cooldown;
-            player.color = k.rgb(255, 140, 0);
-            k.wait(skills.comma.windup, () => {
-                player.color = k.rgb(255, 255, 255);
-                performAttack(k, player, "heavy", skills.comma.damage);
-            });
-        }
-        if (touchInput.period && player.periodTimer <= 0) {
-            player.periodTimer = skills.period.cooldown;
-            k.play("shield", { volume: 0.5 });
-            const spin = k.add([
-                k.circle(50), k.pos(player.pos), k.anchor("center"),
-                k.color(0, 100, 255), k.opacity(0.5), k.area(),
-                "attack", { damage: player.damage + skills.period.damage }
-            ]);
-            k.wait(0.2, () => k.destroy(spin));
-        }
-        if (touchInput.slash && !gameState.isTimeStopped && player.slashTimer <= 0) {
-            k.play("zawarudo", { volume: 0.7 });
-            player.slashTimer = skills.slash.cooldown;
-            toggleTimeStop(k);
-        }
-        if (touchInput.tab) {
-            toggleInventory(k);
-        }
-        if (touchInput.t) {
-            const tvObjects = k.get("tv");
-            let nearTV = tvObjects.some(tv => player.pos.dist(tv.pos) < 50);
-            if (nearTV) revivePet();
-        }
-
-        consumeTouchTriggers();
-    });
 }

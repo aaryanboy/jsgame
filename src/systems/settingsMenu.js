@@ -1,4 +1,4 @@
-// Retro Settings Menu — with Creative Mode sliders
+// Settings Menu — with Creative Mode sliders and skin selection
 import { gameState, setGamePause } from "../utils/utils.js";
 import { petState } from "./persistentPet.js";
 import { gameConfig } from "../utils/constants.js";
@@ -41,7 +41,7 @@ let toggleRefs = {};
 let subPanelOpen = false;
 
 // ── Public API ──
-export function toggleInventory(k) {
+export function toggleSettingsMenu(k) {
   if (k.get("settingsMenu").length > 0) { closeMenu(k); return; }
   openMenu(k);
 }

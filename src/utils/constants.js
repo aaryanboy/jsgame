@@ -61,14 +61,6 @@ export const playerinfo = {
   name: "Hero",
 };
 
-export const bossInfo = {
-  get health() { return gameConfig.boss.health; },
-  get damage() { return gameConfig.boss.damage; },
-  get speed() { return gameConfig.boss.speed; },
-  name: "Boss",
-  critRate: 0.1,
-  critDamage: 1.2,
-};
 
 export const petInfo = {
   get health() { return gameConfig.pet.health; },

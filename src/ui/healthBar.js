@@ -1,6 +1,8 @@
 // Health Bar UI Component
+import { gameConfig } from "../utils/constants.js";
+
 export function createHealthBar(k, player) {
-    const totalHealth = 100;
+    const getMaxHealth = () => gameConfig.player.health;
     const barWidth = 200;
     const barHeight = 20;
 
@@ -37,9 +39,10 @@ export function createHealthBar(k, player) {
     ]);
 
     healthBar.onUpdate(() => {
-        const ratio = player.health / totalHealth;
+        const maxHP = getMaxHealth();
+        const ratio = player.health / maxHP;
         healthBar.width = barWidth * Math.max(0, ratio);
-        hpText.text = `${Math.ceil(player.health)}/${totalHealth}`;
+        hpText.text = `${Math.ceil(player.health)}/${maxHP}`;
         if (ratio < 0.3) healthBar.color = k.rgb(255, 0, 0);
         else if (ratio < 0.6) healthBar.color = k.rgb(255, 165, 0);
         else healthBar.color = k.rgb(0, 255, 0);

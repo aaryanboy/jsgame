@@ -1,6 +1,5 @@
 // Time Stop System - "The World" / Chrono Stasis skill
 import { gameState } from "../utils/utils.js";
-import { skills } from "../utils/constants.js";
 
 // Internal time scale that smoothly transitions
 let internalTimeScale = 1.0;
@@ -36,7 +35,6 @@ function activateTimeStop(k) {
     isResuming = false;
     transitionProgress = 0;
 
-    console.log("⏱️ TIME SLOWING DOWN...");
 
     // Create visual effect - purple tint overlay (starts transparent, fades in)
     const overlay = k.add([
@@ -72,7 +70,6 @@ function activateTimeStop(k) {
             isSlowingDown = false;
             transitionProgress = 0;
 
-            console.log("⏱️ TIME FULLY STOPPED!");
             slowDownLoop.cancel();
 
             // Start pulsing effect on overlay
@@ -105,7 +102,6 @@ function deactivateTimeStop(k) {
     isResuming = true;
     transitionProgress = 0;
 
-    console.log("⏱️ TIME STARTING TO MOVE...");
 
     // Phase 1: Go from fully stopped (0) to slow motion (0.3)
     const SLOW_START_DURATION = 0.5;  // Time to reach slow motion
@@ -124,7 +120,6 @@ function deactivateTimeStop(k) {
                 internalTimeScale = SLOW_MOTION_SCALE;
                 transitionProgress = 0;
                 phase = 2;
-                console.log("⏱️ TIME IN SLOW MOTION...");
             } else {
                 // Ease-out: quick start from stopped, slows as it reaches slow-mo
                 internalTimeScale = SLOW_MOTION_SCALE * easeOutQuad(transitionProgress);
@@ -154,7 +149,6 @@ function deactivateTimeStop(k) {
                 k.get("timeStopOverlay").forEach(obj => k.destroy(obj));
                 k.get("timeStopText").forEach(obj => k.destroy(obj));
 
-                console.log("⏱️ TIME FULLY RESUMED!");
                 resumeLoop.cancel();
             } else {
                 // Ease-in: slow acceleration from slow-mo, speeds up towards normal
@@ -192,5 +186,4 @@ export function resetTimeStop() {
     isResuming = false;
     transitionProgress = 0;
     gameState.isTimeStopped = false;
-    console.log("⏱️ TIME STOP RESET");
 }

@@ -116,7 +116,6 @@ export function setupBossAI(k, boss, player) {
                     else if (roll < 0.9) currentAttackType = ATTACK_TYPES.SHOOT;
                     else currentAttackType = ATTACK_TYPES.TELEPORT;
 
-                    console.log("Boss preparing:", currentAttackType);
 
                 } else if (distToPlayer > AI_CONFIG.detectRange * 1.5) {
                     currentState = BOSS_STATES.IDLE;
@@ -125,12 +124,11 @@ export function setupBossAI(k, boss, player) {
                     const dir = player.pos.sub(boss.pos).unit();
                     boss.move(dir.scale(AI_CONFIG.speed * timeScale));
 
-                    // Animation
-                    if (Math.abs(dir.y) > Math.abs(dir.x)) {
-                        boss.play(dir.y > 0 ? "walk-down" : "walk-up");
-                    } else {
-                        boss.play(dir.x > 0 ? "walk-right" : "walk-left");
-                    }
+                    // Animation (only switch when needed to avoid restart spam)
+                    const anim = Math.abs(dir.y) > Math.abs(dir.x)
+                        ? (dir.y > 0 ? "walk-down" : "walk-up")
+                        : (dir.x > 0 ? "walk-right" : "walk-left");
+                    if (boss.curAnim() !== anim) boss.play(anim);
                 }
                 break;
 
@@ -174,7 +172,7 @@ export function setupBossAI(k, boss, player) {
                         // Projectile collision
                         projectile.onCollide("player", () => {
                             if (!player.isInvulnerable) {
-                                player.health -= 15;
+                                player.health -= boss.damage;
                                 player.isInvulnerable = true;
                                 k.wait(0.5, () => player.isInvulnerable = false);
                                 k.destroy(projectile);
@@ -222,7 +220,7 @@ export function setupBossAI(k, boss, player) {
                 if (attackCooldownTimer <= 0) {
                     currentState = BOSS_STATES.CHASE;
                 } else {
-                    boss.play("idle-down");
+                    if (boss.curAnim() !== "idle-down") boss.play("idle-down");
                 }
                 break;
         }

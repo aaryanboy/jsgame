@@ -1,4 +1,4 @@
-//text dialog box dekhoune ra remove garneee
+// Dialogue display system — typewriter text effect
 
 export function displayDialogue(text, onDisplayEnd) {
   const dialogueUI = document.getElementById("textbox-container");
@@ -6,17 +6,17 @@ export function displayDialogue(text, onDisplayEnd) {
 
   dialogueUI.style.display = "block";
   let index = 0;
-  let currentText = ""; //text to append in page
+  let currentText = "";
   const intervalRef = setInterval(() => {
     if (index < text.length) {
       currentText += text[index];
-      dialogue.innerHTML = currentText; //can get hacked if accepte user input
+      dialogue.textContent = currentText;
       index++;
       return;
     }
 
     clearInterval(intervalRef);
-  }, 5); //5 sec
+  }, 5); // 5ms per character
   const closeBtn = document.getElementById("close");
 
   function onKeyDown(key) {
@@ -54,7 +54,6 @@ export function setCamScale(k) {
 export const gameState = {
   isPaused: false,
   bgm: null,
-  timeScale: 1.0,
   isTimeStopped: false,
 };
 

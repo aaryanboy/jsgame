@@ -1,4 +1,4 @@
-import { toggleInventory } from "../systems/inventory.js";
+import { toggleSettingsMenu } from "../systems/settingsMenu.js";
 import { revivePet } from "../entities/frog.js";
 
 
@@ -20,7 +20,7 @@ export function createGlobalHUD(k, player) {
         if (!k.get("settingsMenu").length) {
             tabBtn.opacity = 0.9;
             k.wait(0.15, () => { if (tabBtn.exists()) tabBtn.opacity = 0.5; });
-            toggleInventory(k);
+            toggleSettingsMenu(k);
         }
     });
 

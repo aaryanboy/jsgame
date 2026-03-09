@@ -1,8 +1,8 @@
 import { scaleFactor, petInfo } from "../utils/constants.js";
 import { gameState } from "../utils/utils.js";
-import { calculateDamage, isLastHitCritical } from "../systems/damage.js";
 import { getTimeScale } from "../systems/timeStop.js";
 import { petState } from "../systems/persistentPet.js";
+import { createEntityHealthBar } from "../ui/entityHealthBar.js";
 
 export function createFrog(k, pos, player, restoreHealth = false) {
     // Use stored health if restoring, otherwise use max
@@ -82,27 +82,12 @@ export function createFrog(k, pos, player, restoreHealth = false) {
         petState.currentHealth = frog.health;
     });
 
-    // Add Health Bar
-    const barWidth = 20;
-    const barHeight = 4;
-
-    // Background (Red)
-    frog.add([
-        k.rect(barWidth, barHeight),
-        k.pos(-barWidth / 2, -15),
-        k.color(255, 0, 0),
-    ]);
-
-    // Foreground (Green)
-    const hpBar = frog.add([
-        k.rect(barWidth, barHeight),
-        k.pos(-barWidth / 2, -15),
-        k.color(0, 255, 0),
-    ]);
-
-    // Update HP Bar
-    hpBar.onUpdate(() => {
-        hpBar.width = barWidth * (frog.health / petInfo.health);
+    // Health bar (reusable component)
+    createEntityHealthBar(k, frog, {
+        maxHealth: petInfo.health,
+        barWidth: 20,
+        barHeight: 4,
+        yOffset: -15,
     });
 
 
@@ -118,13 +103,13 @@ export function createFrog(k, pos, player, restoreHealth = false) {
 
         const timeScale = getTimeScale();
 
-        // COMBAT LOGIC: Search for Boss
-        const bosses = k.get("boss");
+        // COMBAT LOGIC: Search for any enemy (boss, slime, skeleton, etc.)
+        const enemies = k.get("enemy");
         let targetEnemy = null;
-        if (bosses.length > 0) {
-            const boss = bosses[0];
-            if (frog.pos.dist(boss.pos) < 400) {
-                targetEnemy = boss;
+        for (const enemy of enemies) {
+            if (frog.pos.dist(enemy.pos) < 400) {
+                targetEnemy = enemy;
+                break;
             }
         }
 
@@ -187,15 +172,11 @@ export function createFrog(k, pos, player, restoreHealth = false) {
 
     // Collision/Combat Logic
     frog.onCollide("attack", (attack) => {
-        // Calculate Damage
-        const damageDealt = calculateDamage(
-            attack.damage,
-            player.critDamage,
-            player.critRate
-        );
+        // Frog takes flat damage from attacks (no crit amplification against self)
+        const damageDealt = Math.floor(attack.damage);
         frog.health -= damageDealt;
 
-        k.get("damageBox").forEach(b => b.trigger("showDamage", damageDealt, isLastHitCritical(), frog.pos));
+        k.get("damageBox").forEach(b => b.trigger("showDamage", damageDealt, false, frog.pos));
 
         // Game feel: subtle shake + hit flash
         k.shake(2);
@@ -222,7 +203,6 @@ export function createFrog(k, pos, player, restoreHealth = false) {
  */
 export function revivePet() {
     if (!petState.kaboom || !petState.player) {
-        console.log("Cannot revive/summon pet - missing kaboom or player reference.");
         return false;
     }
 
@@ -231,7 +211,6 @@ export function revivePet() {
 
     // If the pet is already alive and in this room, don't do anything
     if (petState.currentPet && !petState.isDead) {
-        console.log("Pet is already alive and with you.");
         return false;
     }
 
@@ -249,14 +228,6 @@ export function revivePet() {
     const newPet = createFrog(k, spawnPos, player);
     k.add(newPet);
 
-    console.log("Pet summoned beside player!");
     return true;
 }
 
-/**
- * Check if pet is currently dead
- * @returns {boolean}
- */
-export function isPetDead() {
-    return petState.isDead;
-}
