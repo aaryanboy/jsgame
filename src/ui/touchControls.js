@@ -37,17 +37,31 @@ export function showTouchControls(k, player) {
     const w = k.width(), h = k.height();
     const base = Math.min(w, h);
 
-    // ── MOBA Joystick (Left) ──
+    // ── Simple Circular Joystick (Left) ──
     const joyR = Math.round(base * 0.14);
     const joyX = Math.round(w * 0.16);
     const joyY = Math.round(h * 0.75);
 
-    // Draggable Joystick Handle (Static, only changes tiles)
-    const handle = k.add([
-        k.sprite("joystick", { anim: "knob" }),
+    // Joystick Base
+    k.add([
+        k.circle(joyR),
         k.pos(joyX, joyY),
         k.anchor("center"),
-        k.scale(base * 0.0035), // Slightly larger since it's floating
+        k.color(200, 200, 200),
+        k.opacity(0.15),
+        k.outline(2, k.rgb(255, 255, 255)),
+        k.fixed(),
+        { z: 200 },
+        "touchControl",
+    ]);
+
+    // Joystick Handle
+    const handle = k.add([
+        k.circle(joyR * 0.45),
+        k.pos(joyX, joyY),
+        k.anchor("center"),
+        k.color(255, 255, 255),
+        k.opacity(0.4),
         k.fixed(),
         { z: 205 },
         "touchControl",
@@ -75,7 +89,7 @@ export function showTouchControls(k, player) {
                     }
                     if (!joyActive) {
                         const dist = tPos.dist(k.vec2(joyX, joyY));
-                        if (dist < joyR * 1.5) {
+                        if (dist < joyR * 2) { // Generous activation area
                             joyActive = true;
                             joyPointerId = tId;
                             currentPos = tPos;
@@ -96,7 +110,7 @@ export function showTouchControls(k, player) {
                     isActiveNow = true;
                 } else if (!joyActive) {
                     const dist = mPos.dist(k.vec2(joyX, joyY));
-                    if (dist < joyR * 1.5) {
+                    if (dist < joyR * 2) {
                         joyActive = true;
                         joyPointerId = "mouse";
                         currentPos = mPos;
@@ -114,7 +128,6 @@ export function showTouchControls(k, player) {
                 joyActive = false;
                 joyPointerId = null;
                 handle.pos = k.vec2(joyX, joyY);
-                handle.play("knob"); // Back to neutral
                 touchInput.up = false;
                 touchInput.down = false;
                 touchInput.left = false;
@@ -126,30 +139,20 @@ export function showTouchControls(k, player) {
     function updateJoystick(pos) {
         let diff = pos.sub(k.vec2(joyX, joyY));
         let dist = diff.len();
-        const maxDist = joyR - 10;
+        const maxDist = joyR * 0.8;
 
         if (dist > maxDist) {
             diff = diff.scale(maxDist / dist);
         }
-        // Perfectly static: The handle no longer shifts physically.
-        handle.pos = k.vec2(joyX, joyY); 
+        
+        // Move the handle physically
+        handle.pos = k.vec2(joyX, joyY).add(diff); 
 
         const deadzone = maxDist * 0.2;
         touchInput.up = diff.y < -deadzone;
         touchInput.down = diff.y > deadzone;
         touchInput.left = diff.x < -deadzone;
         touchInput.right = diff.x > deadzone;
-
-        // Visual direction feedback mapping to new sprites
-        if (touchInput.up && touchInput.right) handle.play("up-right");
-        else if (touchInput.up && touchInput.left) handle.play("up-left");
-        else if (touchInput.down && touchInput.right) handle.play("down-right");
-        else if (touchInput.down && touchInput.left) handle.play("down-left");
-        else if (touchInput.up) handle.play("up");
-        else if (touchInput.down) handle.play("down");
-        else if (touchInput.left) handle.play("left");
-        else if (touchInput.right) handle.play("right");
-        else handle.play("knob");
     }
 
     // ── Pixel Art Action Buttons (Right) ──
