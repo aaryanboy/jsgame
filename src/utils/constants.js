@@ -18,7 +18,7 @@ export const gameConfig = {
   player: {
     speed: 250,
     health: 100,
-    damage: 10,
+    damage: 1000,
     critRate: 0.2,   // 0–1
     critDamage: 1.5,   // multiplier
     skinIndex: 0,
@@ -31,9 +31,18 @@ export const gameConfig = {
   pet: {
     health: 500,
     speed: 200,
-    damage: 20,
+    damage: 5,
     critRate: 0.05,
     critDamage: 1.1,
+  },
+  slime: {
+    health: 40,
+    damage: 8,
+    speed: 180,
+    detectRange: 250,
+    attackRange: 40,
+    attackCooldown: 1.5,
+    spawnRate: 0.5, // 50% chance to spawn at each point
   },
   skills: {
     swiftSlashDmg: 10,

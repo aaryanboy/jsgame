@@ -6,6 +6,8 @@ import { petState, spawnPetInNewRoom, checkPetTransition } from "../systems/pers
 import { createDamageBox } from "../ui/damageBox.js";
 import { resetTimeStop } from "../systems/timeStop.js";
 import { createEnemy, ENEMY_REGISTRY } from "../systems/enemyRegistry.js";
+import { createSlime } from "../entities/slime.js";
+import { gameState } from "../utils/utils.js";
 
 export const roomData = {
     main: {
@@ -128,6 +130,16 @@ export function loadRoom(k, roomName) {
                     setPlayerControls(k, player);
                     spawnPetInNewRoom(k, player, createFrog);
                     createDamageBox(k);
+
+                    // Restore saved slimes for this room
+                    const savedSlimes = gameState.slimesByRoom[roomName];
+                    if (savedSlimes && savedSlimes.length > 0) {
+                        for (const s of savedSlimes) {
+                            const slime = createSlime(k, k.vec2(s.x, s.y), player);
+                            slime.health = s.health;
+                            k.add(slime);
+                        }
+                    }
                 }
 
                 // Second pass: spawn entities
@@ -142,6 +154,17 @@ export function loadRoom(k, roomName) {
                     // ── Dynamic enemy spawning via registry ──
                     // Any spawn name matching an ENEMY_REGISTRY key is auto-spawned.
                     // To add a new enemy type: add to ENEMY_REGISTRY + place in Tiled map.
+                    if (entity.name.toLowerCase() === "slime") {
+                        // Only spawn new slimes strictly on the first visit to the room
+                        if (gameState.slimesByRoom[roomName] === undefined) {
+                            if (player && Math.random() <= gameConfig.slime.spawnRate) {
+                                const enemy = createSlime(k, entityPos, player);
+                                k.add(enemy);
+                            }
+                        }
+                        continue;
+                    }
+
                     if (ENEMY_REGISTRY[entity.name]) {
                         if (player) {
                             const enemy = createEnemy(k, entity.name, entityPos, player);
@@ -185,7 +208,20 @@ export function loadRoom(k, roomName) {
 
         for (const [exitTag, targetRoom] of Object.entries(EXIT_MAP)) {
             k.onCollide("player", exitTag, () => {
-                if (player) checkPetTransition(player);
+                // Save player health
+                if (player) {
+                    gameState.playerHealth = player.health;
+                    checkPetTransition(player);
+                }
+
+                // Save slime state for current room
+                const slimes = k.get("slime");
+                gameState.slimesByRoom[roomName] = slimes.map(s => ({
+                    x: s.pos.x,
+                    y: s.pos.y,
+                    health: s.health,
+                }));
+
                 // Set return spawn for specific transitions
                 if (exitTag === "exit_to_map") nextSpawnPoint = "return";
                 k.go(targetRoom);

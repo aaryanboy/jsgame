@@ -98,5 +98,21 @@ export function loadAssets(k) {
     k.loadSound("zawarudo", "/attackmusic/za-warudo-dio-the-world.mp3");
     k.loadSound("shield", "/attackmusic/shield.mp3");
 
+    k.loadSprite("slime", "./slime.png", {
+        sliceX: 7, sliceY: 13,
+        anims: {
+            "idle-down": { from: 0, to: 3, loop: true, speed: 6 },
+            "walk-down": { from: 7, to: 10, loop: true, speed: 10 },
+            "idle-right": { from: 21, to: 26, loop: true, speed: 6 },
+            "walk-right": { from: 28, to: 33, loop: true, speed: 10 },
+            "idle-up": { from: 42, to: 48, loop: true, speed: 6 },
+            "walk-up": { from: 49, to: 54, loop: true, speed: 10 },
+            "attack-down": { from: 63, to: 65, loop: false, speed: 10 },
+            "attack-right": { from: 70, to: 72, loop: false, speed: 10 },
+            "attack-up": { from: 77, to: 79, loop: false, speed: 10 },
+            "death": { from: 84, to: 88, loop: false, speed: 10 },
+        }
+    });
+
     k.setBackground(k.Color.fromHex("#311047"));
 }

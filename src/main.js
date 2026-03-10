@@ -28,6 +28,8 @@ k.scene("intro", () => {
     ]);
 
     const startGame = () => {
+        // Stop any leftover BGM before starting fresh
+        if (gameState.bgm) { gameState.bgm.stop(); gameState.bgm = null; }
         gameState.bgm = k.play("bgm", { loop: true, volume: 0.5 });
         k.go("map");
     };
@@ -52,7 +54,11 @@ k.scene("gameover", () => {
         k.color(255, 255, 255),
     ]);
 
-    const retry = () => k.go("intro");
+    const retry = () => {
+        // Stop BGM so intro can start a fresh one
+        if (gameState.bgm) { gameState.bgm.stop(); gameState.bgm = null; }
+        k.go("intro");
+    };
     k.onKeyPress("enter", retry);
     k.onClick(retry);
 });

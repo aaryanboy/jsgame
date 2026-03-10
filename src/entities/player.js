@@ -3,6 +3,7 @@ import { gameState } from "../utils/utils.js";
 import { toggleSettingsMenu } from "../systems/settingsMenu.js";
 import { toggleTimeStop, getTimeScale } from "../systems/timeStop.js";
 import { revivePet } from "./frog.js";
+import { createSlime } from "./slime.js";
 import { createHealthBar } from "../ui/healthBar.js";
 import { createSkillBar } from "../ui/skillBar.js";
 import { touchInput, isTouchMode, showTouchControls, consumeTouchTriggers } from "../ui/touchControls.js";
@@ -10,6 +11,11 @@ import { createGlobalHUD } from "../ui/globalHUD.js";
 
 export function createPlayer(k) {
     const skinSprite = `skin_${gameConfig.player.skinIndex}`;
+    // Use persisted health if available, otherwise max
+    const startHealth = gameState.playerHealth != null
+        ? gameState.playerHealth
+        : playerinfo.health;
+
     const player = k.make([
         k.sprite(skinSprite, { anim: "idle-down" }),
         k.area({ shape: new k.Rect(k.vec2(0, 3), 10, 10) }),
@@ -22,7 +28,7 @@ export function createPlayer(k) {
             speed: playerinfo.speed,
             direction: playerinfo.direction,
             isInDialogue: playerinfo.isInDialogue,
-            health: playerinfo.health,
+            health: startHealth,
             damage: playerinfo.damage,
             critRate: playerinfo.critRate,
             critDamage: playerinfo.critDamage,
@@ -98,6 +104,12 @@ export function setPlayerControls(k, player) {
         if (nearTV) revivePet();
     }
 
+    function executeSpawnSlime() {
+        const spawnPos = player.pos.add(k.vec2(30, 0));
+        const slime = createSlime(k, spawnPos, player);
+        k.add(slime);
+    }
+
     // ── Game Loop ──
     k.onUpdate(() => {
         if (player.mTimer > 0) player.mTimer -= k.dt();
@@ -106,6 +118,9 @@ export function setPlayerControls(k, player) {
         if (player.slashTimer > 0) player.slashTimer -= k.dt();
 
         if (player.health <= 0) {
+            if (gameState.bgm) { gameState.bgm.stop(); gameState.bgm = null; }
+            gameState.playerHealth = null;   // Reset for fresh start
+            gameState.slimesByRoom = {};     // Clear saved enemies
             k.go("gameover");
             return;
         }
@@ -163,6 +178,7 @@ export function setPlayerControls(k, player) {
         k.onKeyPress("/", guardedAction(executeTheWorld)),
         k.onKeyPress("tab", executeSettingsToggle),
         k.onKeyPress("t", guardedAction(executeRevive)),
+        k.onKeyPress("l", guardedAction(executeSpawnSlime)),
     ];
 
     // Cancel all keyboard listeners when player is destroyed

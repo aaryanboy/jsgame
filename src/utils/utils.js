@@ -55,6 +55,8 @@ export const gameState = {
   isPaused: false,
   bgm: null,
   isTimeStopped: false,
+  playerHealth: null,       // Persisted across rooms. null = use max HP
+  slimesByRoom: {},         // { roomName: [{ x, y, health }, ...] }
 };
 
 export function setGamePause(k, isPaused) {

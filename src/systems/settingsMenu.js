@@ -277,6 +277,8 @@ function activate(k, isClick = false) {
       gameState.isPaused = false;
       gameState.isTimeStopped = false;
       gameState.timeScale = 1.0;
+      gameState.playerHealth = null;
+      gameState.slimesByRoom = {};
       petState.isDead = false;
       petState.shouldPersist = false;
       petState.currentPet = null;
@@ -404,6 +406,12 @@ const ALL_SLIDERS = [
   ["Boss Speed", "boss.speed", 20, 400, 10, v => `${v}`],
   ["Pet HP", "pet.health", 10, 2000, 50, v => `${v}`],
   ["Pet Damage", "pet.damage", 1, 100, 1, v => `${v}`],
+  ["Slime HP", "slime.health", 10, 500, 10, v => `${v}`],
+  ["Slime Damage", "slime.damage", 1, 100, 1, v => `${v}`],
+  ["Slime Speed", "slime.speed", 20, 400, 10, v => `${v}`],
+  ["Slime Detect", "slime.detectRange", 50, 800, 10, v => `${v}`],
+  ["Slime Atk CD", "slime.attackCooldown", 0.1, 5, 0.1, v => `${v.toFixed(1)}s`],
+  ["Slime Spawn Rate", "slime.spawnRate", 0, 1, 0.05, v => `${Math.round(v * 100)}%`],
   ["Swift Slash Dmg", "skills.swiftSlashDmg", 1, 200, 1, v => `${v}`],
   ["Titan Cleave Dmg", "skills.titanCleaveDmg", 1, 300, 1, v => `${v}`],
 ];
@@ -542,6 +550,7 @@ function showCreativePanel(k) {
     Object.assign(gameConfig.player, { speed: 250, health: 100, damage: 10, critRate: 0.2, critDamage: 1.5 });
     Object.assign(gameConfig.boss, { health: 100, damage: 20, speed: 100 });
     Object.assign(gameConfig.pet, { health: 500, speed: 200, damage: 20, critRate: 0.05, critDamage: 1.1 });
+    Object.assign(gameConfig.slime, { health: 40, damage: 8, speed: 180, detectRange: 250, attackRange: 40, attackCooldown: 1.5, spawnRate: 0.5 });
     Object.assign(gameConfig.skills, { swiftSlashDmg: 10, swiftSlashCD: 0.5, titanCleaveDmg: 30, titanCleaveCD: 2.0, bladeStormDmg: 15, bladeStormCD: 3.0, theWorldCD: 5.0 });
     k.get("creativeSliders").forEach(e => k.destroy(e));
     creativeClickHandlers.forEach(h => h.cancel());
@@ -664,6 +673,13 @@ function applyLiveStats(k, section, key, val) {
       if (key === "health" && val < f.health) f.health = val;
       if (key === "damage") f.damage = val;
       if (key === "speed") f.speed = val;
+    });
+  }
+  if (section === "slime") {
+    k.get("slime").forEach(s => {
+      if (key === "health" && val < s.health) s.health = val;
+      if (key === "damage") s.damage = val;
+      if (key === "speed") s.speed = val;
     });
   }
 }
