@@ -1,4 +1,4 @@
-import { dialogueData, scaleFactor } from "../utils/constants.js";
+import { dialogueData, scaleFactor, gameConfig } from "../utils/constants.js";
 import { displayDialogue, setCamScale } from "../utils/utils.js";
 import { createPlayer, setPlayerControls } from "../entities/player.js";
 import { createFrog } from "../entities/frog.js";
@@ -143,6 +143,9 @@ export function loadRoom(k, roomName) {
                 }
 
                 // Second pass: spawn entities
+                // Collect all slime points first to pick just one
+                let slimePoints = [];
+
                 for (const entity of layer.objects) {
                     if (entity.name === "player" || entity.name === "return") continue;
 
@@ -151,20 +154,12 @@ export function loadRoom(k, roomName) {
                         (map.pos.y + entity.y) * scaleFactor
                     );
 
-                    // ── Dynamic enemy spawning via registry ──
-                    // Any spawn name matching an ENEMY_REGISTRY key is auto-spawned.
-                    // To add a new enemy type: add to ENEMY_REGISTRY + place in Tiled map.
                     if (entity.name.toLowerCase() === "slime") {
-                        // Only spawn new slimes strictly on the first visit to the room
-                        if (gameState.slimesByRoom[roomName] === undefined) {
-                            if (player && Math.random() <= gameConfig.slime.spawnRate) {
-                                const enemy = createSlime(k, entityPos, player);
-                                k.add(enemy);
-                            }
-                        }
+                        slimePoints.push(entityPos);
                         continue;
                     }
 
+                    // ── Dynamic enemy spawning via registry ──
                     if (ENEMY_REGISTRY[entity.name]) {
                         if (player) {
                             const enemy = createEnemy(k, entity.name, entityPos, player);
@@ -190,11 +185,26 @@ export function loadRoom(k, roomName) {
                         ]);
                     }
                 }
+
+                // ── Spawn slimes at each point based on spawnRate on first visit ──
+                if (slimePoints.length > 0 && gameState.slimesByRoom[roomName] === undefined) {
+                    if (player) {
+                        for (const point of slimePoints) {
+                            if (Math.random() <= gameConfig.slime.spawnRate) {
+                                const enemy = createSlime(k, point, player);
+                                k.add(enemy);
+                            }
+                        }
+                    }
+                    // Mark this room as visited so we don't re-generate on re-entry
+                    gameState.slimesByRoom[roomName] = [];
+                }
             }
         }
 
-        setCamScale(k);
-        k.onResize(() => setCamScale(k));
+        const roomZoom = roomName === "area" ? 1.5 : 1;
+        setCamScale(k, roomZoom);
+        k.onResize(() => setCamScale(k, roomZoom));
 
         // ── Room exit transitions ──
         // Each exit tag triggers a scene change. The new scene is already
