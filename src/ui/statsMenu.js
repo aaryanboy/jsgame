@@ -18,16 +18,17 @@ const R = THEME.resources;
 const S_ACC = THEME.slotAccents;
 
 export function createStatsMenu(k, player) {
-    if (isTouchMode()) return;
+    const isTouch = isTouchMode();
+    if (k.get("statsMenu").length > 0) return;
 
-    const L = getHudLayout(k.width(), k.height());
+    const L = getHudLayout(k.width(), k.height(), isTouch);
     const S = L.S;
     const sh = L.shOff;
 
     // ════════════════════════════════════════
     //  BACK LAYER — info panels (behind diamond)
     // ════════════════════════════════════════
-    const back = k.add([k.pos(0, 0), k.fixed(), { z: Z.hudBack }, "statsMenu"]);
+    const back = k.add([k.pos(0, 0), k.fixed(), k.stay(["main", "map", "area", "boss"]), { z: Z.hudBack }, "statsMenu"]);
 
     drawSkinBox(k, back, L, S, sh);
     drawNameBox(k, back, L, S, sh);
@@ -38,7 +39,7 @@ export function createStatsMenu(k, player) {
     // ════════════════════════════════════════
     //  FRONT LAYER — diamond on top
     // ════════════════════════════════════════
-    const front = k.add([k.pos(0, 0), k.fixed(), { z: Z.hudFront }, "statsMenu"]);
+    const front = k.add([k.pos(0, 0), k.fixed(), k.stay(["main", "map", "area", "boss"]), { z: Z.hudFront }, "statsMenu"]);
 
     drawDiamond(k, front, L, S, sh);
     drawSkillSlots(k, front, L, S, sh, player);
@@ -181,8 +182,11 @@ function drawHealthBar(k, parent, L, S, sh, player) {
 
     // Dynamic update
     hpFill.onUpdate(() => {
+        const p = k.get("player")[0];
+        if (!p) return;
+        
         const max = gameConfig.player.health;
-        const cur = Math.max(0, player.health);
+        const cur = Math.max(0, p.health);
         const r = Math.max(0, Math.min(1, cur / max));
         if (r > 0) {
             hpFill.opacity = 1;
@@ -316,12 +320,11 @@ function drawDiamond(k, parent, L, S, sh) {
 // ─────────────────────────────────────────────
 //  SKILL SLOTS — 4 diamonds in cross pattern
 // ─────────────────────────────────────────────
-function drawSkillSlots(k, parent, L, S, sh, player) {
+function drawSkillSlots(k, parent, L, S, sh) {
     const { cx, cy, small, slotOffset } = L.diamond;
     const fontSize = L.font.bar;
 
-    // Equipped skills (swappable for future inventory system)
-    player.equippedSkills = player.equippedSkills || {
+    const equippedSkills = {
         top: "slash", left: "comma", right: "period", bottom: "m"
     };
 
@@ -336,7 +339,7 @@ function drawSkillSlots(k, parent, L, S, sh, player) {
     };
 
     Object.entries(positions).forEach(([slotId, offset]) => {
-        const skillKey = player.equippedSkills[slotId];
+        const skillKey = equippedSkills[slotId];
         const skillData = skills[skillKey];
         if (!skillData) return;
 
@@ -365,13 +368,16 @@ function drawSkillSlots(k, parent, L, S, sh, player) {
         const timerKey = timerKeys[skillKey];
 
         cdOverlay.onUpdate(() => {
+            const p = k.get("player")[0];
+            if (!p) return;
+
             if (skillKey === "slash" && gameState.isTimeStopped) {
                 cdOverlay.opacity = 0.55;
                 cdText.text = "⏱";
                 cdText.color = k.rgb(147, 112, 219);
-            } else if (player[timerKey] > 0) {
+            } else if (p[timerKey] > 0) {
                 cdOverlay.opacity = 0.65;
-                cdText.text = Math.ceil(player[timerKey]).toString();
+                cdText.text = Math.ceil(p[timerKey]).toString();
                 cdText.color = k.rgb(240, 220, 50);
             } else {
                 cdOverlay.opacity = 0;

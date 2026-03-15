@@ -31,7 +31,7 @@ export function showTouchControls(k, player) {
     if (player) touchPlayer = player;
     if (!touchPlayer) touchPlayer = k.get("player")[0];
     
-    hideTouchControls(k);
+    if (k.get("touchControl").length > 0) return;
     if (!isTouchMode()) return;
 
     const w = k.width(), h = k.height();
@@ -272,6 +272,9 @@ function makeActionButton(k, x, y, r, key, label, color, timerKey) {
         }
         lastPressed = pressed;
     });
+
+    // Make all touch controls persistent across rooms
+    k.get("touchControl").forEach(el => el.use(k.stay(["main", "map", "area", "boss"])));
 }
 
 export function hideTouchControls(k) {

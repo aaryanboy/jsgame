@@ -8,7 +8,7 @@ let hudPlayer = null;
 // A persistent UI layer for top-corner buttons (Settings & Revive)
 export function createGlobalHUD(k, player) {
     if (player) hudPlayer = player;
-    hideGlobalHUD(k); // clear existing first
+    if (k.get("globalHUD").length > 0) return;
 
     const w = k.width(), h = k.height();
     const base = Math.min(w, h);
@@ -26,6 +26,7 @@ export function createGlobalHUD(k, player) {
         k.color(...THEME.brand.secondary),
         k.opacity(0.3),
         k.fixed(),
+        k.stay(["main", "map", "area", "boss"]),
         { z: Z.hudBack },
         "globalHUD"
     ]);
@@ -39,6 +40,7 @@ export function createGlobalHUD(k, player) {
         k.color(...THEME.palette.bg),
         k.outline(2, k.rgb(...THEME.brand.primary)),
         k.fixed(),
+        k.stay(["main", "map", "area", "boss"]),
         { z: Z.hudFront },
         "globalHUD"
     ]);
@@ -52,6 +54,7 @@ export function createGlobalHUD(k, player) {
         k.anchor("center"),
         k.color(...THEME.palette.white),
         k.fixed(),
+        k.stay(["main", "map", "area", "boss"]),
         { z: Z.hudFront + 1 },
         "globalHUD"
     ]);
