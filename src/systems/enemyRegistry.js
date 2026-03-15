@@ -6,7 +6,7 @@
 //
 // The roomManager will automatically spawn enemies from the registry.
 
-import { gameConfig, scaleFactor } from "../utils/constants.js";
+import { gameConfig, scaleFactor, Z, TAGS, RANGES } from "../utils/constants.js";
 import { createEntityHealthBar } from "../ui/entityHealthBar.js";
 import { setupEnemyMovement } from "./enemyMovement.js";
 import { setupBossAI } from "./bossAI.js";
@@ -45,7 +45,7 @@ export const ENEMY_REGISTRY = {
                 k.anchor("center"),
                 k.color(255, 215, 0),
                 k.fixed(),
-                { z: 100 },
+                { z: Z.menu },
             ]);
             k.wait(3, () => k.go("map"));
         },
@@ -96,7 +96,7 @@ export function createEnemy(k, type, pos, player) {
         k.anchor("center"),
         k.pos(pos),
         k.scale(scaleFactor * (def.scale ?? 1)),
-        { z: 2 },
+        { z: Z.enemies },
         {
             health: rawStats.health,
             maxHealth: rawStats.health,
@@ -105,7 +105,7 @@ export function createEnemy(k, type, pos, player) {
             enemyType: type,
         },
         type.toLowerCase(),  // tag (e.g. "boss", "slime")
-        "enemy",             // generic enemy tag for shared logic
+        TAGS.enemy,             // generic enemy tag for shared logic
     ]);
 
     // ── Health bar ──
@@ -137,7 +137,7 @@ export function createEnemy(k, type, pos, player) {
     }
 
     // ── Combat — receives damage from "attack" tag ──
-    k.onCollide("attack", type.toLowerCase(), (attack) => {
+    k.onCollide(TAGS.attack, type.toLowerCase(), (attack) => {
         let totalDamage = calculateDamage(
             attack.damage,
             player.critDamage,
@@ -166,8 +166,8 @@ export function createEnemy(k, type, pos, player) {
 
 // ── Chase AI — follows player within range, deals contact damage ──
 function setupChaseAI(k, enemy, player, stats) {
-    const DETECT_RANGE = 300;
-    const ATTACK_RANGE = 30;
+    const DETECT_RANGE = RANGES.npcDetect;
+    const ATTACK_RANGE = RANGES.npcAttack;
     let hitCooldown = 0;
 
     enemy.onUpdate(() => {

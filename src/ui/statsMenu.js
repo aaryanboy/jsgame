@@ -6,11 +6,16 @@
 //   hud/hudLayout.js  — Layout/position calculator
 //   statsMenu.js      — This file (assembly + render)
 
-import { gameConfig, skills } from "../utils/constants.js";
+import { gameConfig, skills, Z } from "../utils/constants.js";
 import { isTouchMode } from "./touchControls.js";
 import { gameState } from "../utils/utils.js";
-import { HUD_COLORS as C } from "./hud/hudColors.js";
+import { THEME } from "../utils/theme.js";
 import { getHudLayout } from "./hud/hudLayout.js";
+
+const C = THEME.hud;
+const P = THEME.palette;
+const R = THEME.resources;
+const S_ACC = THEME.slotAccents;
 
 export function createStatsMenu(k, player) {
     if (isTouchMode()) return;
@@ -22,7 +27,7 @@ export function createStatsMenu(k, player) {
     // ════════════════════════════════════════
     //  BACK LAYER — info panels (behind diamond)
     // ════════════════════════════════════════
-    const back = k.add([k.pos(0, 0), k.fixed(), { z: 90 }, "statsMenu"]);
+    const back = k.add([k.pos(0, 0), k.fixed(), { z: Z.hudBack }, "statsMenu"]);
 
     drawSkinBox(k, back, L, S, sh);
     drawNameBox(k, back, L, S, sh);
@@ -33,7 +38,7 @@ export function createStatsMenu(k, player) {
     // ════════════════════════════════════════
     //  FRONT LAYER — diamond on top
     // ════════════════════════════════════════
-    const front = k.add([k.pos(0, 0), k.fixed(), { z: 91 }, "statsMenu"]);
+    const front = k.add([k.pos(0, 0), k.fixed(), { z: Z.hudFront }, "statsMenu"]);
 
     drawDiamond(k, front, L, S, sh);
     drawSkillSlots(k, front, L, S, sh, player);
@@ -49,7 +54,7 @@ function drawSkinBox(k, parent, L, S, sh) {
     parent.add([
         k.rect(size, size),
         k.pos(x + sh, y + sh),
-        k.color(...C.shadow), k.opacity(0.6),
+        k.color(...P.shadowLight), k.opacity(0.6),
     ]);
     // Body
     parent.add([
@@ -89,7 +94,7 @@ function drawNameBox(k, parent, L, S, sh) {
     parent.add([
         k.rect(w, h),
         k.pos(x + sh, y + sh),
-        k.color(...C.shadow), k.opacity(0.5),
+        k.color(...P.shadowLight), k.opacity(0.5),
     ]);
     // Body
     parent.add([
@@ -101,13 +106,13 @@ function drawNameBox(k, parent, L, S, sh) {
     parent.add([
         k.text("Necromancer", { size: fontSize, font: "monospace", weight: "bold" }),
         k.pos(x + Math.round(8 * S) + 1, y + h / 2 + 1),
-        k.anchor("left"), k.color(...C.textShadow),
+        k.anchor("left"), k.color(...C.textDark),
     ]);
     // Text
     parent.add([
         k.text("Necromancer", { size: fontSize, font: "monospace", weight: "bold" }),
         k.pos(x + Math.round(8 * S), y + h / 2),
-        k.anchor("left"), k.color(...C.textWhite),
+        k.anchor("left"), k.color(...C.textMax),
     ]);
 }
 
@@ -124,7 +129,7 @@ function drawHealthBar(k, parent, L, S, sh, player) {
             k.vec2(skew + sh, sh), k.vec2(w + sh, sh),
             k.vec2(w - skew + sh, h + sh), k.vec2(sh, h + sh),
         ]),
-        k.pos(x, y), k.color(...C.shadow), k.opacity(0.6),
+        k.pos(x, y), k.color(...P.shadowLight), k.opacity(0.6),
     ]);
     // Track
     parent.add([
@@ -132,7 +137,7 @@ function drawHealthBar(k, parent, L, S, sh, player) {
             k.vec2(skew, 0), k.vec2(w, 0),
             k.vec2(w - skew, h), k.vec2(0, h),
         ]),
-        k.pos(x, y), k.color(...C.hpBackground),
+        k.pos(x, y), k.color(...C.hpBg),
         k.outline(Math.round(1.5 * S), k.rgb(...C.hpBorder)),
     ]);
     // Fill
@@ -166,19 +171,19 @@ function drawHealthBar(k, parent, L, S, sh, player) {
     const hpTextSh = parent.add([
         k.text("", { size: fontSize, font: "monospace", weight: "bold" }),
         k.pos(x + w / 2 + 1, y + h / 2 + 1),
-        k.anchor("center"), k.color(...C.textShadow),
+        k.anchor("center"), k.color(...C.textDark),
     ]);
     const hpText = parent.add([
         k.text("", { size: fontSize, font: "monospace", weight: "bold" }),
         k.pos(x + w / 2, y + h / 2),
-        k.anchor("center"), k.color(...C.textWhite),
+        k.anchor("center"), k.color(...C.textMax),
     ]);
 
     // Dynamic update
     hpFill.onUpdate(() => {
         const max = gameConfig.player.health;
         const cur = Math.max(0, player.health);
-        const r   = Math.max(0, Math.min(1, cur / max));
+        const r = Math.max(0, Math.min(1, cur / max));
         if (r > 0) {
             hpFill.opacity = 1;
             const fw = (w - 2) * r;
@@ -207,7 +212,7 @@ function drawXpBar(k, parent, L, S, sh) {
             k.vec2(skew + sh, sh), k.vec2(w + sh, sh),
             k.vec2(w - skew + sh, h + sh), k.vec2(sh, h + sh),
         ]),
-        k.pos(x, y), k.color(...C.shadow), k.opacity(0.5),
+        k.pos(x, y), k.color(...P.shadowLight), k.opacity(0.5),
     ]);
     // Track
     parent.add([
@@ -215,7 +220,7 @@ function drawXpBar(k, parent, L, S, sh) {
             k.vec2(skew, 0), k.vec2(w, 0),
             k.vec2(w - skew, h), k.vec2(0, h),
         ]),
-        k.pos(x, y), k.color(...C.xpBackground),
+        k.pos(x, y), k.color(...C.xpBg),
         k.outline(Math.round(S), k.rgb(...C.xpBorder)),
     ]);
     // Fill (0% placeholder — hook into XP system later)
@@ -245,34 +250,34 @@ function drawResourceRow(k, parent, L, S, sh) {
     const fontSize = L.font.res;
 
     const resources = [
-        { color: C.gold, dark: C.goldDark, shape: "circle",  value: "50" },
-        { color: C.gem,  dark: C.gemDark,  shape: "diamond", value: "50" },
-        { color: C.soul, dark: C.soulDark, shape: "flame",   value: "5"  },
+        { color: R.gold, dark: R.goldD, shape: "circle", value: "50" },
+        { color: R.gem, dark: R.gemD, shape: "diamond", value: "50" },
+        { color: R.soul, dark: R.soulD, shape: "flame", value: "5" },
     ];
 
     resources.forEach((res, i) => {
         const rx = startX + i * gap;
-        const r  = iconR;
+        const r = iconR;
 
         // Draw icon based on shape
         if (res.shape === "circle") {
-            parent.add([k.circle(r), k.pos(rx + 1, y + 1), k.anchor("center"), k.color(...C.shadow), k.opacity(0.5)]);
+            parent.add([k.circle(r), k.pos(rx + 1, y + 1), k.anchor("center"), k.color(...P.shadowLight), k.opacity(0.5)]);
             parent.add([k.circle(r), k.pos(rx, y), k.anchor("center"), k.color(...res.color), k.outline(1, k.rgb(...res.dark))]);
             parent.add([k.text("$", { size: Math.round(r * 0.9), font: "monospace", weight: "bold" }), k.pos(rx, y), k.anchor("center"), k.color(...res.dark)]);
         } else if (res.shape === "diamond") {
             const pts = [k.vec2(0, -r), k.vec2(r * 0.6, 0), k.vec2(0, r), k.vec2(-r * 0.6, 0)];
-            parent.add([k.polygon(pts), k.pos(rx + 1, y + 1), k.color(...C.shadow), k.opacity(0.5)]);
+            parent.add([k.polygon(pts), k.pos(rx + 1, y + 1), k.color(...P.shadowLight), k.opacity(0.5)]);
             parent.add([k.polygon(pts), k.pos(rx, y), k.color(...res.color), k.outline(1, k.rgb(...res.dark))]);
         } else {
             const pts = [k.vec2(0, -r), k.vec2(r * 0.5, r * 0.4), k.vec2(0, r), k.vec2(-r * 0.5, r * 0.4)];
-            parent.add([k.polygon(pts), k.pos(rx + 1, y + 1), k.color(...C.shadow), k.opacity(0.5)]);
+            parent.add([k.polygon(pts), k.pos(rx + 1, y + 1), k.color(...P.shadowLight), k.opacity(0.5)]);
             parent.add([k.polygon(pts), k.pos(rx, y), k.color(...res.color), k.outline(1, k.rgb(...res.dark))]);
         }
 
         // Value text (shadow + text)
         const tx = rx + r + Math.round(4 * S);
-        parent.add([k.text(res.value, { size: fontSize, font: "monospace" }), k.pos(tx + 1, y + 1), k.anchor("left"), k.color(...C.textShadow)]);
-        parent.add([k.text(res.value, { size: fontSize, font: "monospace" }), k.pos(tx, y), k.anchor("left"), k.color(...C.textMuted)]);
+        parent.add([k.text(res.value, { size: fontSize, font: "monospace" }), k.pos(tx + 1, y + 1), k.anchor("left"), k.color(...THEME.palette.shadow)]);
+        parent.add([k.text(res.value, { size: fontSize, font: "monospace" }), k.pos(tx, y), k.anchor("left"), k.color(...P.muted)]);
     });
 }
 
@@ -286,7 +291,7 @@ function drawDiamond(k, parent, L, S, sh) {
     parent.add([
         k.rect(big, big),
         k.pos(cx + sh, cy + sh), k.anchor("center"), k.rotate(45),
-        k.color(...C.shadow), k.opacity(0.7),
+        k.color(...P.shadowLight), k.opacity(0.7),
     ]);
     // Outer border
     parent.add([
@@ -324,23 +329,23 @@ function drawSkillSlots(k, parent, L, S, sh, player) {
     const keyLabels = { m: "M", comma: ",", period: ".", slash: "/" };
 
     const positions = {
-        top:    k.vec2(0, -slotOffset),
-        left:   k.vec2(-slotOffset, 0),
-        right:  k.vec2(slotOffset, 0),
+        top: k.vec2(0, -slotOffset),
+        left: k.vec2(-slotOffset, 0),
+        right: k.vec2(slotOffset, 0),
         bottom: k.vec2(0, slotOffset),
     };
 
     Object.entries(positions).forEach(([slotId, offset]) => {
-        const skillKey  = player.equippedSkills[slotId];
+        const skillKey = player.equippedSkills[slotId];
         const skillData = skills[skillKey];
         if (!skillData) return;
 
-        const slotX  = cx + offset.x;
-        const slotY  = cy + offset.y;
-        const accent = C.slotAccent[slotId];
+        const slotX = cx + offset.x;
+        const slotY = cy + offset.y;
+        const accent = S_ACC[slotId];
 
         // Shadow
-        parent.add([k.rect(small, small), k.pos(slotX + 1, slotY + 2), k.anchor("center"), k.rotate(45), k.color(...C.shadow), k.opacity(0.55)]);
+        parent.add([k.rect(small, small), k.pos(slotX + 1, slotY + 2), k.anchor("center"), k.rotate(45), k.color(...P.shadowLight), k.opacity(0.55)]);
         // Border glow
         parent.add([k.rect(small + 2, small + 2), k.pos(slotX, slotY), k.anchor("center"), k.rotate(45), k.color(...accent), k.opacity(0.45)]);
         // Body
@@ -351,13 +356,13 @@ function drawSkillSlots(k, parent, L, S, sh, player) {
         parent.add([k.rect(small - Math.round(3 * S), Math.max(1, Math.round(S * 0.8))), k.pos(slotX, slotY - 1), k.anchor("center"), k.rotate(45), k.color(255, 255, 255), k.opacity(0.2)]);
         // Key label (shadow + text)
         const label = keyLabels[skillKey] || skillKey.toUpperCase();
-        parent.add([k.text(label, { size: Math.round(7 * S), font: "monospace", weight: "bold" }), k.pos(slotX + 1, slotY + 1), k.anchor("center"), k.color(...C.textShadow)]);
-        parent.add([k.text(label, { size: Math.round(7 * S), font: "monospace", weight: "bold" }), k.pos(slotX, slotY), k.anchor("center"), k.color(255, 255, 255)]);
+        parent.add([k.text(label, { size: Math.round(7 * S), font: "monospace", weight: "bold" }), k.pos(slotX + 1, slotY + 1), k.anchor("center"), k.color(...C.textDark)]);
+        parent.add([k.text(label, { size: Math.round(7 * S), font: "monospace", weight: "bold" }), k.pos(slotX, slotY), k.anchor("center"), k.color(...P.white)]);
 
         // Cooldown overlay + text
         const cdOverlay = parent.add([k.rect(small - 2, small - 2), k.pos(slotX, slotY), k.anchor("center"), k.rotate(45), k.color(0, 0, 0), k.opacity(0)]);
-        const cdText    = parent.add([k.text("", { size: Math.round(9 * S), font: "monospace", weight: "bold" }), k.pos(slotX, slotY), k.anchor("center"), k.color(240, 220, 50)]);
-        const timerKey  = timerKeys[skillKey];
+        const cdText = parent.add([k.text("", { size: Math.round(9 * S), font: "monospace", weight: "bold" }), k.pos(slotX, slotY), k.anchor("center"), k.color(240, 220, 50)]);
+        const timerKey = timerKeys[skillKey];
 
         cdOverlay.onUpdate(() => {
             if (skillKey === "slash" && gameState.isTimeStopped) {

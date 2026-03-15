@@ -114,5 +114,5 @@ export function loadAssets(k) {
         }
     });
 
-    k.setBackground(k.Color.fromHex("#311047"));
+    k.setBackground(k.Color.fromHex("#0a0a0f"));
 }

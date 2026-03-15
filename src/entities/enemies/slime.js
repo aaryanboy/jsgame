@@ -1,4 +1,4 @@
-import { scaleFactor, gameConfig } from "../../utils/constants.js";
+import { scaleFactor, gameConfig, Z, TAGS } from "../../utils/constants.js";
 import { gameState } from "../../utils/utils.js";
 import { getTimeScale } from "../../systems/timeStop.js";
 import { createEntityHealthBar } from "../../ui/entityHealthBar.js";
@@ -20,7 +20,7 @@ export function createSlime(k, pos, player) {
         k.anchor("center"),
         k.pos(pos),
         k.scale(scaleFactor * 0.5),
-        { z: 2 },
+        { z: Z.enemies },
         {
             health: stats.health,
             maxHealth: stats.health,
@@ -31,7 +31,7 @@ export function createSlime(k, pos, player) {
             isAttacking: false,
         },
         "slime",
-        "enemy",
+        TAGS.enemy,
     ]);
 
     // Health bar
@@ -199,7 +199,7 @@ export function createSlime(k, pos, player) {
     };
 
     // ── Take damage from player attacks ──
-    slime.onCollide("attack", (attack) => {
+    slime.onCollide(TAGS.attack, (attack) => {
         const dmg = attack.damage || 10;
         slime.health -= dmg;
 

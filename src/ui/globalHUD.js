@@ -1,5 +1,7 @@
 import { toggleSettingsMenu } from "../systems/settingsMenu.js";
 import { revivePet } from "../entities/frog.js";
+import { THEME } from "../utils/theme.js";
+import { Z } from "../utils/constants.js";
 
 let hudPlayer = null;
 
@@ -21,10 +23,10 @@ export function createGlobalHUD(k, player) {
         k.circle(utilSize * 0.6),
         k.pos(x, y),
         k.anchor("center"),
-        k.color(108, 92, 231),
+        k.color(...THEME.brand.secondary),
         k.opacity(0.3),
         k.fixed(),
-        { z: 90 },
+        { z: Z.hudBack },
         "globalHUD"
     ]);
 
@@ -34,10 +36,10 @@ export function createGlobalHUD(k, player) {
         k.pos(x, y),
         k.anchor("center"),
         k.area(),
-        k.color(18, 18, 18),
-        k.outline(2, k.rgb(167, 139, 250)),
+        k.color(...THEME.palette.bg),
+        k.outline(2, k.rgb(...THEME.brand.primary)),
         k.fixed(),
-        { z: 91 },
+        { z: Z.hudFront },
         "globalHUD"
     ]);
 
@@ -48,9 +50,9 @@ export function createGlobalHUD(k, player) {
         k.rotate(0),
         k.scale(1),
         k.anchor("center"),
-        k.color(255, 255, 255),
+        k.color(...THEME.palette.white),
         k.fixed(),
-        { z: 92 },
+        { z: Z.hudFront + 1 },
         "globalHUD"
     ]);
 
@@ -85,10 +87,10 @@ export function createGlobalHUD(k, player) {
                  k.circle(utilSize * 0.5),
                  k.pos(x, y),
                  k.anchor("center"),
-                 k.color(108, 92, 231),
+                 k.color(...THEME.brand.secondary),
                  k.opacity(0.6),
                  k.fixed(),
-                 { z: 93 },
+                 { z: Z.hudFront + 2 },
                  "globalHUD"
              ]);
              k.tween(pulse.radius, utilSize * 2.5, 0.4, (v) => pulse.radius = v, k.easings.easeOutQuad);

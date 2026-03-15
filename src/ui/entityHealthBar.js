@@ -1,5 +1,4 @@
-// Reusable health bar component for any entity
-// Use on bosses, enemies, pets, or any entity with a `health` property.
+import { THEME } from "../utils/theme.js";
 
 /**
  * Attach a floating health bar to any entity.
@@ -10,8 +9,8 @@
  * @param {number} [options.barWidth=30]   - Width in pixels
  * @param {number} [options.barHeight=4]   - Height in pixels
  * @param {number} [options.yOffset=-15]   - Y offset above center
- * @param {Array}  [options.fgColor=[0,255,0]] - Foreground (healthy) color
- * @param {Array}  [options.bgColor=[255,0,0]] - Background (damage) color
+ * @param {Array}  [options.fgColor=THEME.status.success] - Foreground (healthy) color
+ * @param {Array}  [options.bgColor=THEME.status.error] - Background (damage) color
  */
 export function createEntityHealthBar(k, entity, options = {}) {
     const {
@@ -19,8 +18,8 @@ export function createEntityHealthBar(k, entity, options = {}) {
         barWidth = 30,
         barHeight = 4,
         yOffset = -15,
-        fgColor = [0, 255, 0],
-        bgColor = [255, 0, 0],
+        fgColor = THEME.status.success,
+        bgColor = THEME.status.error,
     } = options;
 
     // Background (red/damage layer)

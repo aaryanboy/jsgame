@@ -1,5 +1,38 @@
 export const scaleFactor = 4;
 
+// ── Standard Z-Index Layering ──
+export const Z = {
+    floor:     0,
+    decor:     1,
+    enemies:   2,
+    player:    5,
+    projectiles: 10,
+    hudBack:   90,
+    hudFront:  91,
+    overlay:   95,
+    menu:      100,
+    settings:  101, // sub-panels
+};
+
+// ── Collision Tags ──
+export const TAGS = {
+    player:  "player",
+    enemy:   "enemy",
+    boss:    "boss",
+    attack:  "attack",
+    pet:     "pet",
+    wall:    "wall",
+};
+
+// ── World & AI Ranges ──
+export const RANGES = {
+    npcDetect:  300,
+    npcAttack:  30,
+    interact:   40,
+    petFollow:  60,
+};
+
+
 //inside room
 export const dialogueData = {
   bed: `This is where I sleep.`,

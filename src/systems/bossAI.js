@@ -1,9 +1,11 @@
 import { gameState } from "../utils/utils.js";
 import { getTimeScale } from "../systems/timeStop.js";
+import { TAGS, RANGES, Z } from "../utils/constants.js";
+import { THEME } from "../utils/theme.js";
 
 const AI_CONFIG = {
-    detectRange: 500,
-    attackRange: 150,
+    detectRange: RANGES.npcDetect * 1.6, // Boss has larger range
+    attackRange: RANGES.npcAttack * 5,
     speed: 100,
     dashSpeed: 500,
     attackCooldown: 1.5,
@@ -159,13 +161,14 @@ export function setupBossAI(k, boss, player) {
                         const dir = player.pos.sub(boss.pos).unit();
                         const projectile = k.make([
                             k.circle(12),
-                            k.color(255, 255, 0), // Yellow
-                            k.outline(2, k.rgb(255, 0, 0)), // Red outline
+                            k.color(...THEME.status.warning), // Yellow
+                            k.outline(2, k.rgb(...THEME.status.error)), // Red outline
                             k.area(),
                             k.pos(boss.pos),
                             k.anchor("center"),
                             k.move(dir, 400),
                             k.offscreen({ destroy: true }),
+                            { z: Z.projectiles },
                             "boss_projectile" // Tag
                         ]);
 

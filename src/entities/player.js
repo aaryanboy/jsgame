@@ -1,4 +1,4 @@
-import { scaleFactor, skills, playerinfo, gameConfig } from "../utils/constants.js";
+import { scaleFactor, skills, playerinfo, gameConfig, Z, TAGS, RANGES } from "../utils/constants.js";
 import { gameState } from "../utils/utils.js";
 import { toggleSettingsMenu } from "../systems/settingsMenu.js";
 import { toggleTimeStop, getTimeScale } from "../systems/timeStop.js";
@@ -7,6 +7,7 @@ import { createSlime } from "./enemies/slime.js";
 import { createStatsMenu } from "../ui/statsMenu.js";
 import { touchInput, isTouchMode, showTouchControls, consumeTouchTriggers } from "../ui/touchControls.js";
 import { createGlobalHUD } from "../ui/globalHUD.js";
+import { THEME } from "../utils/theme.js";
 import { petState } from "../systems/persistentPet.js"; // IMPORT PET STATE
 
 export function createPlayer(k) {
@@ -23,7 +24,7 @@ export function createPlayer(k) {
         k.anchor("center"),
         k.pos(),
         k.scale(scaleFactor),
-        { z: 2 },
+        { z: Z.player },
         {
             speed: playerinfo.speed,
             direction: playerinfo.direction,
@@ -39,7 +40,7 @@ export function createPlayer(k) {
             periodTimer: 0,
             slashTimer: 0,
         },
-        "player",
+        TAGS.player,
     ]);
 
     return player;
@@ -62,7 +63,7 @@ export function setPlayerControls(k, player) {
 
     const reviveBg = reviveUI.add([
         k.rect(40, 6, { radius: 3 }),
-        k.color(18, 18, 18),
+        k.color(...THEME.palette.bg),
         k.opacity(0),
         k.anchor("center"),
         k.pos(0, -45),
@@ -70,7 +71,7 @@ export function setPlayerControls(k, player) {
     
     const reviveFill = reviveUI.add([
         k.rect(0, 6, { radius: 3 }),
-        k.color(167, 139, 250), // Sleek purple
+        k.color(...THEME.brand.primary), // Sleek purple
         k.opacity(0),
         k.anchor("left"),
         k.pos(-20, -45),

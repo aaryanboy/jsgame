@@ -5,32 +5,33 @@ import { gameConfig } from "../utils/constants.js";
 import { getLayout } from "../ui/settingsLayout.js";
 import { showTouchControls, hideTouchControls } from "../ui/touchControls.js";
 import { showGlobalHUD, hideGlobalHUD } from "../ui/globalHUD.js";
+import { THEME } from "../utils/theme.js";
+import { Z } from "../utils/constants.js";
 
-// ── Premium Modern Dark Palette ──
 const C = {
-  panelBg: [18, 18, 18],     // #121212
-  panelInner: [26, 26, 28],  // Sleek dark inner
-  panelBorder: [75, 60, 140], // Subtle purple border
-  shadow: [0, 0, 0],         // Pure black drop shadows
-  separator: [45, 45, 50],   // Dark gray separator
-  title: [167, 139, 250],    // #A78BFA (Vibrant Purple)
-  greenFace: [52, 211, 153], // Emerald
-  greenShad: [16, 185, 129],
-  redFace: [248, 113, 113],  // Rose
-  redShad: [239, 68, 68],
-  blueFace: [96, 165, 250],  // Sky
-  blueShad: [59, 130, 246],
-  purpleFace: [167, 139, 250],
-  purpleShad: [139, 92, 246],
-  itemBg: [35, 35, 40],      // Elevated dark bg
-  itemShad: [25, 25, 30],
-  toggleOn: [52, 211, 153],
-  toggleOff: [248, 113, 113],
-  white: [245, 245, 250],
-  dark: [180, 180, 190],     // Text muted
-  gold: [251, 191, 36],
-  sliderFill: [167, 139, 250],
-  sliderTrack: [45, 45, 50],
+  panelBg:     THEME.palette.bg,
+  panelInner:  THEME.palette.bgInner,
+  panelBorder: THEME.palette.border,
+  shadow:      THEME.palette.shadow,
+  separator:   THEME.palette.separator,
+  title:       THEME.brand.primary,
+  greenFace:   THEME.status.success,
+  greenShad:   THEME.status.successDk,
+  redFace:     THEME.status.error,
+  redShad:     THEME.status.errorDk,
+  blueFace:    THEME.status.info,
+  blueShad:    THEME.status.infoDk,
+  purpleFace:  THEME.brand.primary,
+  purpleShad:  THEME.brand.secondary,
+  itemBg:      THEME.palette.bgInner,
+  itemShad:    THEME.palette.shadow,
+  toggleOn:    THEME.status.success,
+  toggleOff:   THEME.status.error,
+  white:       THEME.palette.white,
+  dark:        THEME.palette.muted,
+  gold:        THEME.status.warning,
+  sliderFill:  THEME.brand.primary,
+  sliderTrack: THEME.palette.separator,
 };
 
 // ── Module state ──
@@ -83,18 +84,18 @@ function openMenu(k) {
   const R = L.radius;
 
   // Overlay
-  addFx(k, 98, "settingsMenu",
+  addFx(k, Z.overlay, "settingsMenu",
     k.rect(k.width() * 3, k.height() * 3), k.pos(-k.width(), -k.height()),
     k.color(0, 0, 0), k.opacity(0.65));
 
   // Panel shadow + body
-  addFx(k, 99, "settingsMenu",
+  addFx(k, Z.menu - 1, "settingsMenu",
     k.rect(S.w + 4, S.h + 6, { radius: R.panel + 2 }), k.pos(S.x, S.y + 4),
     k.color(...C.shadow), k.opacity(0.4));
-  addFx(k, 100, "settingsMenu",
+  addFx(k, Z.menu, "settingsMenu",
     k.rect(S.w, S.h, { radius: R.panel }), k.pos(S.x, S.y),
     k.color(...C.panelBg), k.outline(1, k.rgb(...C.panelBorder)));
-  addFx(k, 100, "settingsMenu",
+  addFx(k, Z.menu, "settingsMenu",
     k.rect(S.w - 24, S.h - 24, { radius: R.inner }), k.pos(S.x + 12, S.y + 12),
     k.color(...C.panelInner), k.outline(1, k.rgb(...C.separator)));
 

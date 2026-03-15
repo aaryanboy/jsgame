@@ -8,17 +8,14 @@ import { gameState } from "./utils/utils.js";
 loadAssets(k);
 
 // 2. Define Rooms (scenes)
-// Instead of calling loadRoom for every room immediately, the roomManager handles Scene registration inside loadRoom.
-// We should register all potential rooms or just the first one?
-// roomManager.js's loadRoom registers a scene k.scene(roomName, ...).
-// So we need to call it for all rooms so k.go() works for any of them.
-
 loadRoom(k, "main");
 loadRoom(k, "map");
 loadRoom(k, "area");
 loadRoom(k, "boss");
 
-// 3. Start the Game
+// 3. Start the Game — wait for assets to finish, THEN go to intro
+//    k.go() clears internal events, so calling it during loading
+//    would destroy the custom loading screen listener.
 k.scene("intro", () => {
     k.add([
         k.text("Press Enter or Tap to Start", { size: 32 }),
@@ -38,7 +35,9 @@ k.scene("intro", () => {
     k.onClick(startGame);
 });
 
-k.go("intro");
+k.onLoad(() => {
+    k.go("intro");
+});
 
 k.scene("gameover", () => {
     k.add([
