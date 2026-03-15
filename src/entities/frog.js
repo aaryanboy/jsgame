@@ -176,7 +176,7 @@ export function createFrog(k, pos, player, restoreHealth = false) {
         const damageDealt = Math.floor(attack.damage);
         frog.health -= damageDealt;
 
-        k.get("damageBox").forEach(b => b.trigger("showDamage", damageDealt, false, frog.pos));
+        // damageBox removed
 
         // Game feel: subtle shake + hit flash
         k.shake(2);

@@ -1,7 +1,7 @@
-import { scaleFactor, gameConfig } from "../utils/constants.js";
-import { gameState } from "../utils/utils.js";
-import { getTimeScale } from "../systems/timeStop.js";
-import { createEntityHealthBar } from "../ui/entityHealthBar.js";
+import { scaleFactor, gameConfig } from "../../utils/constants.js";
+import { gameState } from "../../utils/utils.js";
+import { getTimeScale } from "../../systems/timeStop.js";
+import { createEntityHealthBar } from "../../ui/entityHealthBar.js";
 
 /**
  * Creates a Slime enemy that chases and attacks the player.
@@ -204,9 +204,7 @@ export function createSlime(k, pos, player) {
         slime.health -= dmg;
 
         // Feed damage to floating damage box
-        k.get("damageBox").forEach(b =>
-            b.trigger("showDamage", dmg, false, slime.pos)
-        );
+        // damageBox removed
 
         // Hit flash
         k.shake(3);

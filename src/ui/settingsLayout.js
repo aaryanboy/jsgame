@@ -11,8 +11,9 @@ export function getLayout(w, h) {
     const gap = Math.round(Math.max(12, w * 0.025));
 
     // ── Settings panel (LEFT) ──
-    const settingsW = Math.round((w - margin * 3) / 2);
-    const settingsH = h - margin * 2;
+    // Tweak: Ensure minimum width/height for usability on small mobile
+    const settingsW = Math.round(Math.max(220, (w - margin * 3) / 2));
+    const settingsH = Math.round(Math.max(300, h - margin * 2));
     const settingsX = margin;
     const settingsY = margin;
 
@@ -25,14 +26,14 @@ export function getLayout(w, h) {
     // ── Responsive font sizes ──
     const base = Math.min(w, h);
     const fontSize = {
-        title: Math.round(Math.max(24, base * 0.055)),   // "SETTINGS", "SELECT SKIN"
-        subtitle: Math.round(Math.max(18, base * 0.035)),   // skin name, sub-titles
-        button: Math.round(Math.max(16, base * 0.032)),   // menu button labels
-        label: Math.round(Math.max(14, base * 0.028)),   // slider labels, control keys
-        small: Math.round(Math.max(10, base * 0.02)),    // footer, hints
-        toggle: Math.round(Math.max(12, base * 0.022)),   // ON/OFF text
-        arrow: Math.round(Math.max(18, base * 0.035)),   // ◀ ▶ arrows
-        selector: Math.round(Math.max(20, base * 0.04)),    // ▶ selector arrow
+        title: Math.round(Math.max(28, base * 0.055)),   // "STATS MENU", "SELECT SKIN"
+        subtitle: Math.round(Math.max(20, base * 0.035)),   // skin name, sub-titles
+        button: Math.round(Math.max(18, base * 0.032)),   // menu button labels
+        label: Math.round(Math.max(16, base * 0.028)),   // slider labels, control keys
+        small: Math.round(Math.max(12, base * 0.02)),    // footer, hints
+        toggle: Math.round(Math.max(14, base * 0.022)),   // ON/OFF text
+        arrow: Math.round(Math.max(20, base * 0.035)),   // ◀ ▶ arrows
+        selector: Math.round(Math.max(22, base * 0.04)),    // ▶ selector arrow
     };
 
     // ── Responsive element sizes ──

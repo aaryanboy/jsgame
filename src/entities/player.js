@@ -3,11 +3,11 @@ import { gameState } from "../utils/utils.js";
 import { toggleSettingsMenu } from "../systems/settingsMenu.js";
 import { toggleTimeStop, getTimeScale } from "../systems/timeStop.js";
 import { revivePet } from "./frog.js";
-import { createSlime } from "./slime.js";
-import { createHealthBar } from "../ui/healthBar.js";
-import { createSkillBar } from "../ui/skillBar.js";
+import { createSlime } from "./enemies/slime.js";
+import { createStatsMenu } from "../ui/statsMenu.js";
 import { touchInput, isTouchMode, showTouchControls, consumeTouchTriggers } from "../ui/touchControls.js";
 import { createGlobalHUD } from "../ui/globalHUD.js";
+import { petState } from "../systems/persistentPet.js"; // IMPORT PET STATE
 
 export function createPlayer(k) {
     const skinSprite = `skin_${gameConfig.player.skinIndex}`;
@@ -33,6 +33,7 @@ export function createPlayer(k) {
             critRate: playerinfo.critRate,
             critDamage: playerinfo.critDamage,
             isInvulnerable: false,
+            reviveProgress: 0,
             mTimer: 0,
             commaTimer: 0,
             periodTimer: 0,
@@ -46,14 +47,55 @@ export function createPlayer(k) {
 
 export function setPlayerControls(k, player) {
     // ── UI Components ──
-    createHealthBar(k, player);
-    createSkillBar(k, player);
+    createStatsMenu(k, player);
     createGlobalHUD(k, player);
     if (isTouchMode()) showTouchControls(k);
 
-    // ── Shared skill execution functions ──
-    // These are used by BOTH keyboard and touch handlers to avoid duplication.
+    // ── Revive UI Overlay (Follows Player) ──
+    const REVIVE_TIME = 2.0;
 
+    const reviveUI = k.add([
+        k.pos(),
+        { z: 150 },
+        "reviveUI"
+    ]);
+
+    const reviveBg = reviveUI.add([
+        k.rect(40, 6, { radius: 3 }),
+        k.color(18, 18, 18),
+        k.opacity(0),
+        k.anchor("center"),
+        k.pos(0, -45),
+    ]);
+    
+    const reviveFill = reviveUI.add([
+        k.rect(0, 6, { radius: 3 }),
+        k.color(167, 139, 250), // Sleek purple
+        k.opacity(0),
+        k.anchor("left"),
+        k.pos(-20, -45),
+    ]);
+
+    const reviveText = reviveUI.add([
+        k.text("Hold to Revive", { size: 10, font: "monospace" }),
+        k.color(255, 255, 255),
+        k.opacity(0),
+        k.anchor("center"),
+        k.pos(0, -60),
+    ]);
+
+    // Interactable area to allow touch users to hold to revive
+    const reviveHitbox = reviveUI.add([
+        k.rect(100, 60),
+        k.anchor("center"),
+        k.pos(0, -50),
+        k.opacity(0), 
+        k.area(), 
+    ]);
+
+    player.onDestroy(() => k.destroy(reviveUI));
+
+    // ── Shared skill execution functions ──
     function executeSwiftSlash() {
         if (player.mTimer > 0) return;
         player.mTimer = skills.m.cooldown;
@@ -98,12 +140,6 @@ export function setPlayerControls(k, player) {
         toggleSettingsMenu(k);
     }
 
-    function executeRevive() {
-        const tvObjects = k.get("tv");
-        const nearTV = tvObjects.some(tv => player.pos.dist(tv.pos) < 50);
-        if (nearTV) revivePet();
-    }
-
     function executeSpawnSlime() {
         const spawnPos = player.pos.add(k.vec2(30, 0));
         const slime = createSlime(k, spawnPos, player);
@@ -125,6 +161,56 @@ export function setPlayerControls(k, player) {
             return;
         }
         k.camPos(player.pos);
+        
+        // Update Revive UI position
+        reviveUI.pos = player.pos;
+
+        // ── Revive Logic ──
+        const tvObjects = k.get("tv");
+        const nearTV = tvObjects.some(tv => player.pos.dist(tv.pos) < 50);
+
+        if (nearTV && petState.isDead) { // 
+            reviveBg.opacity = 0.6;
+            reviveText.opacity = Math.max(0.6, Math.sin(k.time() * 4) * 0.5 + 0.5); // Pulse gently
+            
+            let touchHolding = false;
+            if (k.isMouseDown("left") || isTouchMode()) {
+                if (k.getTouches && k.getTouches().length > 0) {
+                    for (const t of k.getTouches()) {
+                        const touchWorldPos = k.toWorld(t.pos ? t.pos : t);
+                        // Approximate hovering since hasPoint expects world coord on UI relative elements can be tricky
+                        if (reviveHitbox.hasPoint(touchWorldPos) || touchWorldPos.dist(player.pos) < 60) {
+                            touchHolding = true;
+                        }
+                    }
+                }
+                if (k.isMouseDown("left")) {
+                    if (reviveHitbox.isHovering()) touchHolding = true;
+                }
+            }
+
+            const holding = touchHolding || k.isKeyDown("t");
+
+            if (holding) {
+                player.reviveProgress += k.dt() / REVIVE_TIME;
+                player.reviveProgress = Math.min(player.reviveProgress, 1);
+            } else {
+                player.reviveProgress = Math.max(0, player.reviveProgress - k.dt() * 2); // quickly decay
+            }
+            
+            reviveFill.width = 40 * player.reviveProgress;
+            reviveFill.opacity = player.reviveProgress > 0 ? 1 : 0;
+            
+            if (player.reviveProgress >= 1) {
+                revivePet();
+                player.reviveProgress = 0;
+            }
+        } else {
+            player.reviveProgress = 0;
+            reviveBg.opacity = 0;
+            reviveFill.opacity = 0;
+            reviveText.opacity = 0;
+        }
 
         if (gameState.isPaused || player.isInDialogue) return;
 
@@ -177,7 +263,6 @@ export function setPlayerControls(k, player) {
         k.onKeyPress(".", guardedAction(executeBladeStorm)),
         k.onKeyPress("/", guardedAction(executeTheWorld)),
         k.onKeyPress("tab", executeSettingsToggle),
-        k.onKeyPress("t", guardedAction(executeRevive)),
         k.onKeyPress("l", guardedAction(executeSpawnSlime)),
     ];
 
@@ -197,7 +282,6 @@ export function setPlayerControls(k, player) {
         if (touchInput.period) executeBladeStorm();
         if (touchInput.slash) executeTheWorld();
         if (touchInput.tab) executeSettingsToggle();
-        if (touchInput.t) executeRevive();
 
         consumeTouchTriggers();
     });

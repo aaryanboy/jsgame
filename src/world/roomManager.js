@@ -3,10 +3,10 @@ import { displayDialogue, setCamScale } from "../utils/utils.js";
 import { createPlayer, setPlayerControls } from "../entities/player.js";
 import { createFrog } from "../entities/frog.js";
 import { petState, spawnPetInNewRoom, checkPetTransition } from "../systems/persistentPet.js";
-import { createDamageBox } from "../ui/damageBox.js";
+
 import { resetTimeStop } from "../systems/timeStop.js";
 import { createEnemy, ENEMY_REGISTRY } from "../systems/enemyRegistry.js";
-import { createSlime } from "../entities/slime.js";
+import { createSlime } from "../entities/enemies/slime.js";
 import { gameState } from "../utils/utils.js";
 
 export const roomData = {
@@ -129,7 +129,7 @@ export function loadRoom(k, roomName) {
 
                     setPlayerControls(k, player);
                     spawnPetInNewRoom(k, player, createFrog);
-                    createDamageBox(k);
+                    // Damage box removed
 
                     // Restore saved slimes for this room
                     const savedSlimes = gameState.slimesByRoom[roomName];

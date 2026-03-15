@@ -146,9 +146,7 @@ export function createEnemy(k, type, pos, player) {
         enemy.health -= totalDamage;
 
         // Feed hit data to floating damage UI
-        k.get("damageBox").forEach(b =>
-            b.trigger("showDamage", totalDamage, isLastHitCritical(), enemy.pos)
-        );
+        // damageBox removed
 
         // Game feel: screen shake + hit flash
         k.shake(isLastHitCritical() ? 8 : 4);

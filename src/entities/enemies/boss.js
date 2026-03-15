@@ -1,5 +1,5 @@
-import { scaleFactor, gameConfig } from "../utils/constants.js";
-import { createEntityHealthBar } from "../ui/entityHealthBar.js";
+import { scaleFactor, gameConfig } from "../../utils/constants.js";
+import { createEntityHealthBar } from "../../ui/entityHealthBar.js";
 
 /**
  * Creates a boss entity with stats from gameConfig.
