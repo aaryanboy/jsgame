@@ -51,6 +51,7 @@ export function setCamScale(k, roomName, zoomMultiplier = 1) {
   k.camScale(k.vec2(baseZoom * zoomMultiplier));
 }
 
+
 export const gameState = {
   isPaused: false,
   bgm: null,
