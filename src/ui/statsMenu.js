@@ -76,12 +76,20 @@ function drawSkinBox(k, parent, L, S, sh) {
         k.color(...C.skinBorderWhite),
     ]);
     // Player sprite
-    parent.add([
+    const skinSprite = parent.add([
         k.sprite(`skin_${gameConfig.player.skinIndex}`, { anim: "idle-down" }),
         k.pos(x + size / 2, y + size / 2),
         k.anchor("center"),
         k.scale(Math.max(1, Math.round(1.4 * S))),
     ]);
+
+    let lastSkinIndex = gameConfig.player.skinIndex;
+    skinSprite.onUpdate(() => {
+        if (gameConfig.player.skinIndex !== lastSkinIndex) {
+            lastSkinIndex = gameConfig.player.skinIndex;
+            skinSprite.use(k.sprite(`skin_${lastSkinIndex}`, { anim: "idle-down" }));
+        }
+    });
 }
 
 // ─────────────────────────────────────────────
