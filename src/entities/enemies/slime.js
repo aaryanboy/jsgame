@@ -189,7 +189,9 @@ export function createSlime(k, pos, player) {
     // ── Death sequence ──
     slime.die = () => {
         slime.unuse("body");
-        slime.unuse("area");
+        // Don't unuse 'area' as it crashes Kaboom collision checks mid-frame
+        // Instead, tell Kaboom to ignore collisions with these tags
+        slime.collisionIgnore = [TAGS.player, TAGS.attack, TAGS.enemy];
         slime.play("death");
         slime.onAnimEnd((anim) => {
             if (anim === "death") {

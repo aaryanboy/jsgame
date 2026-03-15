@@ -202,9 +202,9 @@ export function loadRoom(k, roomName) {
             }
         }
 
-        const roomZoom = roomName === "area" ? 1.5 : 1;
-        setCamScale(k, roomZoom);
-        k.onResize(() => setCamScale(k, roomZoom));
+        const roomZoom = roomName === "area" ? 1.5 : 1.3;
+        setCamScale(k, roomName, roomZoom);
+        k.onResize(() => setCamScale(k, roomName, roomZoom));
 
         // ── Room exit transitions ──
         // Each exit tag triggers a scene change. The new scene is already

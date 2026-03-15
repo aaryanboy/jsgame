@@ -42,13 +42,13 @@ export function displayDialogue(text, onDisplayEnd) {
   closeBtn.addEventListener("touchstart", onCloseBtnClick, { passive: false });
 }
 
-export function setCamScale(k, zoomMultiplier = 1) {
-  const resizeFactor = k.width() / k.height();
-  if (resizeFactor < 1) {
-    k.camScale(k.vec2(1 * zoomMultiplier));
-  } else {
-    k.camScale(k.vec2(1.5 * zoomMultiplier));
-  }
+export function setCamScale(k, roomName, zoomMultiplier = 1) {
+  // Zoom proportional to screen width so the same amount of
+  // game world is always visible regardless of screen size.
+  // Main area uses 1250 so it's zoomed out slightly more.
+  const divisor = roomName === "main" ? 1250 : 1100;
+  const baseZoom = k.width() / divisor;
+  k.camScale(k.vec2(baseZoom * zoomMultiplier));
 }
 
 export const gameState = {
