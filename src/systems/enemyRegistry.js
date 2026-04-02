@@ -126,9 +126,11 @@ export function createEnemy(k, type, pos, player) {
             break;
         case "patrol":
             setupEnemyMovement(k, enemy, rawStats.speed);
-            break;
         case "chase":
             setupChaseAI(k, enemy, player, rawStats);
+            break;
+        case "patrol":
+            setupEnemyMovement(k, enemy, rawStats.speed);
             break;
         case "static":
         default:
@@ -137,6 +139,8 @@ export function createEnemy(k, type, pos, player) {
     }
 
     // ── Combat — receives damage from "attack" tag ──
+    const XP_MAP = { Boss: 100, Slime: 20, Skeleton: 30 };
+    
     k.onCollide(TAGS.attack, type.toLowerCase(), (attack) => {
         let totalDamage = calculateDamage(
             attack.damage,
@@ -145,10 +149,7 @@ export function createEnemy(k, type, pos, player) {
         );
         enemy.health -= totalDamage;
 
-        // Feed hit data to floating damage UI
-        // damageBox removed
-
-        // Game feel: screen shake + hit flash
+        // hit colors, shake, etc.
         k.shake(isLastHitCritical() ? 8 : 4);
         enemy.color = k.rgb(255, 100, 100);
         k.wait(0.1, () => {
@@ -156,6 +157,8 @@ export function createEnemy(k, type, pos, player) {
         });
 
         if (enemy.health <= 0) {
+            const xp = XP_MAP[type] || 20;
+            addXP(xp);
             if (def.onDeath) def.onDeath(k, enemy.pos, player);
             k.destroy(enemy);
         }

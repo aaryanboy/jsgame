@@ -2,13 +2,12 @@ import { scaleFactor, skills, playerinfo, gameConfig, Z, TAGS, RANGES } from "..
 import { gameState } from "../utils/utils.js";
 import { toggleSettingsMenu } from "../systems/settingsMenu.js";
 import { toggleTimeStop, getTimeScale } from "../systems/timeStop.js";
-import { revivePet } from "./frog.js";
 import { createSlime } from "./enemies/slime.js";
 import { createStatsMenu } from "../ui/statsMenu.js";
 import { touchInput, isTouchMode, showTouchControls, consumeTouchTriggers } from "../ui/touchControls.js";
 import { createGlobalHUD } from "../ui/globalHUD.js";
 import { THEME } from "../utils/theme.js";
-import { petState } from "../systems/persistentPet.js"; // IMPORT PET STATE
+import { petState, revivePet } from "../systems/persistentPet.js"; // UPDATED IMPORT
 
 export function createPlayer(k) {
     const skinSprite = `skin_${gameConfig.player.skinIndex}`;
@@ -30,6 +29,7 @@ export function createPlayer(k) {
             direction: playerinfo.direction,
             isInDialogue: playerinfo.isInDialogue,
             health: startHealth,
+            maxHealth: playerinfo.health,
             damage: playerinfo.damage,
             critRate: playerinfo.critRate,
             critDamage: playerinfo.critDamage,
@@ -52,151 +52,98 @@ export function setPlayerControls(k, player) {
     createGlobalHUD(k, player);
     if (isTouchMode()) showTouchControls(k);
 
-    // ── Revive UI Overlay (Follows Player) ──
     const REVIVE_TIME = 2.0;
-
-    const reviveUI = k.add([
-        k.pos(),
-        { z: 150 },
-        "reviveUI"
-    ]);
-
-    const reviveBg = reviveUI.add([
-        k.rect(40, 6, { radius: 3 }),
-        k.color(...THEME.palette.bg),
-        k.opacity(0),
-        k.anchor("center"),
-        k.pos(0, -45),
-    ]);
-    
-    const reviveFill = reviveUI.add([
-        k.rect(0, 6, { radius: 3 }),
-        k.color(...THEME.brand.primary), // Sleek purple
-        k.opacity(0),
-        k.anchor("left"),
-        k.pos(-20, -45),
-    ]);
-
-    const reviveText = reviveUI.add([
-        k.text("Hold to Revive", { size: 10, font: "monospace" }),
-        k.color(255, 255, 255),
-        k.opacity(0),
-        k.anchor("center"),
-        k.pos(0, -60),
-    ]);
-
-    // Interactable area to allow touch users to hold to revive
-    const reviveHitbox = reviveUI.add([
-        k.rect(100, 60),
-        k.anchor("center"),
-        k.pos(0, -50),
-        k.opacity(0), 
-        k.area(), 
-    ]);
+    const reviveUI = k.add([k.pos(), { z: 150 }, "reviveUI"]);
+    const reviveBg = reviveUI.add([k.rect(40, 6, { radius: 3 }), k.color(...THEME.palette.bg), k.opacity(0), k.anchor("center"), k.pos(0, -45)]);
+    const reviveFill = reviveUI.add([k.rect(0, 6, { radius: 3 }), k.color(...THEME.brand.primary), k.opacity(0), k.anchor("left"), k.pos(-20, -45)]);
+    const reviveText = reviveUI.add([k.text("Hold to Revive", { size: 10, font: "monospace" }), k.color(255, 255, 255), k.opacity(0), k.anchor("center"), k.pos(0, -60)]);
+    const reviveHitbox = reviveUI.add([k.rect(100, 60), k.anchor("center"), k.pos(0, -50), k.opacity(0), k.area()]);
 
     player.onDestroy(() => k.destroy(reviveUI));
 
-    // ── Shared skill execution functions ──
-    function executeSwiftSlash() {
-        if (player.mTimer > 0) return;
-        player.mTimer = skills.m.cooldown;
-        performAttack(k, player, "slash", skills.m.damage);
-    }
+    // ── Skill System Integration ──
+    function executeSkillInSlot(slotIndex) {
+        if (gameState.isPaused || player.isInDialogue || gameState.inputLocked) return;
+        
+        const skillId = gameState.player.activeSkills[slotIndex];
+        if (!skillId) return;
+        
+        import("../systems/progression.js").then(module => {
+            const skill = module.SKILLS[skillId];
+            if (!skill) return;
 
-    function executeTitanCleave() {
-        if (player.commaTimer > 0) return;
-        player.commaTimer = skills.comma.cooldown;
-        player.color = k.rgb(255, 140, 0);
-        k.wait(skills.comma.windup, () => {
-            player.color = k.rgb(255, 255, 255);
-            performAttack(k, player, "heavy", skills.comma.damage);
+            // Handle Unique Skill Behaviors
+            if (skillId === "theWorld") {
+                if (gameState.isTimeStopped) return;
+                k.play("zawarudo", { volume: 0.7 });
+                toggleTimeStop(k);
+                return;
+            }
+
+            if (skillId === "bladeStorm") {
+                k.play("shield", { volume: 0.5 });
+                const spin = k.add([
+                    k.circle(50),
+                    k.pos(player.pos),
+                    k.anchor("center"),
+                    k.color(0, 100, 255),
+                    k.opacity(0.5),
+                    k.area(),
+                    "attack",
+                    { damage: player.damage + skill.damage },
+                ]);
+                k.wait(0.2, () => k.destroy(spin));
+                return;
+            }
+
+            // Default Attack Skills
+            performAttack(k, player, skill.damage > 20 ? "heavy" : "slash", skill.damage);
         });
     }
 
-    function executeBladeStorm() {
-        if (player.periodTimer > 0) return;
-        player.periodTimer = skills.period.cooldown;
-        k.play("shield", { volume: 0.5 });
-        const spin = k.add([
-            k.circle(50),
-            k.pos(player.pos),
-            k.anchor("center"),
-            k.color(0, 100, 255),
-            k.opacity(0.5),
-            k.area(),
-            "attack",
-            { damage: player.damage + skills.period.damage },
-        ]);
-        k.wait(0.2, () => k.destroy(spin));
-    }
-
-    function executeTheWorld() {
-        if (gameState.isTimeStopped || player.slashTimer > 0) return;
-        k.play("zawarudo", { volume: 0.7 });
-        player.slashTimer = skills.slash.cooldown;
-        toggleTimeStop(k);
-    }
-
-    function executeSettingsToggle() {
-        toggleSettingsMenu(k);
-    }
-
-    function executeSpawnSlime() {
-        const spawnPos = player.pos.add(k.vec2(30, 0));
-        const slime = createSlime(k, spawnPos, player);
-        k.add(slime);
+    function toggleInventory() {
+        import("../ui/skillMenu.js").then(module => {
+            module.toggleSkillMenu(k, player);
+        });
     }
 
     // ── Game Loop ──
     k.onUpdate(() => {
-        if (player.mTimer > 0) player.mTimer -= k.dt();
-        if (player.commaTimer > 0) player.commaTimer -= k.dt();
-        if (player.periodTimer > 0) player.periodTimer -= k.dt();
-        if (player.slashTimer > 0) player.slashTimer -= k.dt();
-
         if (player.health <= 0) {
             if (gameState.bgm) { gameState.bgm.stop(); gameState.bgm = null; }
-            gameState.playerHealth = null;   // Reset for fresh start
-            gameState.slimesByRoom = {};     // Clear saved enemies
+            gameState.playerHealth = null;
+            gameState.slimesByRoom = {};
             k.go("gameover");
             return;
         }
-        k.camPos(player.pos);
         
-        // Update Revive UI position
+        k.camPos(player.pos);
         reviveUI.pos = player.pos;
 
         // ── Revive Logic ──
         const tvObjects = k.get("tv");
         const nearTV = tvObjects.some(tv => player.pos.dist(tv.pos) < 50);
 
-        if (nearTV && petState.isDead) { // 
+        if (nearTV && petState.isDead) { 
             reviveBg.opacity = 0.6;
-            reviveText.opacity = Math.max(0.6, Math.sin(k.time() * 4) * 0.5 + 0.5); // Pulse gently
+            reviveText.opacity = Math.max(0.6, Math.sin(k.time() * 4) * 0.5 + 0.5);
             
             let touchHolding = false;
             if (k.isMouseDown("left") || isTouchMode()) {
                 if (k.getTouches && k.getTouches().length > 0) {
                     for (const t of k.getTouches()) {
                         const touchWorldPos = k.toWorld(t.pos ? t.pos : t);
-                        // Approximate hovering since hasPoint expects world coord on UI relative elements can be tricky
-                        if (reviveHitbox.hasPoint(touchWorldPos) || touchWorldPos.dist(player.pos) < 60) {
-                            touchHolding = true;
-                        }
+                        if (reviveHitbox.hasPoint(touchWorldPos) || touchWorldPos.dist(player.pos) < 60) touchHolding = true;
                     }
                 }
-                if (k.isMouseDown("left")) {
-                    if (reviveHitbox.isHovering()) touchHolding = true;
-                }
+                if (k.isMouseDown("left") && reviveHitbox.isHovering()) touchHolding = true;
             }
 
-            const holding = touchHolding || k.isKeyDown("t");
-
-            if (holding) {
+            if (touchHolding || k.isKeyDown("t")) {
                 player.reviveProgress += k.dt() / REVIVE_TIME;
                 player.reviveProgress = Math.min(player.reviveProgress, 1);
             } else {
-                player.reviveProgress = Math.max(0, player.reviveProgress - k.dt() * 2); // quickly decay
+                player.reviveProgress = Math.max(0, player.reviveProgress - k.dt() * 2);
             }
             
             reviveFill.width = 40 * player.reviveProgress;
@@ -213,11 +160,10 @@ export function setPlayerControls(k, player) {
             reviveText.opacity = 0;
         }
 
-        if (gameState.isPaused || player.isInDialogue) return;
+        if (gameState.isPaused || player.isInDialogue || gameState.inputLocked) return;
 
         const speed = player.speed * getTimeScale();
-        let dx = 0;
-        let dy = 0;
+        let dx = 0, dy = 0;
 
         if (k.isKeyDown("left") || k.isKeyDown("a") || touchInput.left) dx = -1;
         if (k.isKeyDown("right") || k.isKeyDown("d") || touchInput.right) dx = 1;
@@ -227,21 +173,10 @@ export function setPlayerControls(k, player) {
         if (dx !== 0 || dy !== 0) {
             const moveVec = k.vec2(dx, dy).unit().scale(speed);
             player.move(moveVec);
-            if (dy < 0) {
-                if (player.curAnim() !== "walk-up") player.play("walk-up");
-                player.direction = "up";
-            } else if (dy > 0) {
-                if (player.curAnim() !== "walk-down") player.play("walk-down");
-                player.direction = "down";
-            } else if (dx < 0) {
-                if (player.curAnim() !== "walk-side") player.play("walk-side");
-                player.direction = "left";
-                player.flipX = true;
-            } else if (dx > 0) {
-                if (player.curAnim() !== "walk-side") player.play("walk-side");
-                player.direction = "right";
-                player.flipX = false;
-            }
+            if (dy < 0) { if (player.curAnim() !== "walk-up") player.play("walk-up"); player.direction = "up"; }
+            else if (dy > 0) { if (player.curAnim() !== "walk-down") player.play("walk-down"); player.direction = "down"; }
+            else if (dx < 0) { if (player.curAnim() !== "walk-side") player.play("walk-side"); player.direction = "left"; player.flipX = true; }
+            else if (dx > 0) { if (player.curAnim() !== "walk-side") player.play("walk-side"); player.direction = "right"; player.flipX = false; }
         } else {
             const curAnim = player.curAnim();
             if (player.direction === "up" && curAnim !== "idle-up") player.play("idle-up");
@@ -250,44 +185,40 @@ export function setPlayerControls(k, player) {
         }
     });
 
-    // ── Keyboard controls ──
-    function guardedAction(fn) {
-        return () => {
-            if (gameState.isPaused || player.isInDialogue) return;
-            fn();
-        };
-    }
-
     const listeners = [
-        k.onKeyPress("m", guardedAction(executeSwiftSlash)),
-        k.onKeyPress(",", guardedAction(executeTitanCleave)),
-        k.onKeyPress(".", guardedAction(executeBladeStorm)),
-        k.onKeyPress("/", guardedAction(executeTheWorld)),
-        k.onKeyPress("tab", executeSettingsToggle),
-        k.onKeyPress("l", guardedAction(executeSpawnSlime)),
+        k.onKeyPress("1", () => executeSkillInSlot(0)),
+        k.onKeyPress("2", () => executeSkillInSlot(1)),
+        k.onKeyPress("3", () => executeSkillInSlot(2)),
+        k.onKeyPress("4", () => executeSkillInSlot(3)),
+        k.onKeyPress("i", toggleInventory),
+        k.onKeyPress("e", toggleInventory),
+        k.onKeyPress("tab", () => toggleSettingsMenu(k)),
+        k.onKeyPress("l", () => {
+            if (gameState.isPaused) return;
+            const spawnPos = player.pos.add(k.vec2(30, 0));
+            k.add(createSlime(k, spawnPos, player));
+        }),
     ];
 
-    // Cancel all keyboard listeners when player is destroyed
     player.onDestroy(() => listeners.forEach(l => l.cancel()));
 
-    // ── Touch input polling (shared skill functions — no duplication) ──
+    // ── Touch input polling ──
     k.onUpdate(() => {
         if (!isTouchMode()) return;
-        if (gameState.isPaused || player.isInDialogue) {
+        if (gameState.isPaused || player.isInDialogue || gameState.inputLocked) {
             consumeTouchTriggers();
             return;
         }
 
-        if (touchInput.m) executeSwiftSlash();
-        if (touchInput.comma) executeTitanCleave();
-        if (touchInput.period) executeBladeStorm();
-        if (touchInput.slash) executeTheWorld();
-        if (touchInput.tab) executeSettingsToggle();
+        if (touchInput.m) executeSkillInSlot(0);
+        if (touchInput.comma) executeSkillInSlot(1);
+        if (touchInput.period) executeSkillInSlot(2);
+        if (touchInput.slash) executeSkillInSlot(3);
+        if (touchInput.tab) toggleSettingsMenu(k);
 
         consumeTouchTriggers();
     });
 
-    // ── Attack helper ──
     function performAttack(k, player, type, damage) {
         let offset = k.vec2(0, 0);
         let anim = "";
@@ -311,7 +242,6 @@ export function setPlayerControls(k, player) {
             { damage: player.damage + damage },
         ]);
         attackSprite.flipX = flipX;
-
         k.wait(0.3, () => k.destroy(attackSprite));
     }
 }

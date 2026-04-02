@@ -56,10 +56,40 @@ export const gameState = {
   isPaused: false,
   bgm: null,
   isTimeStopped: false,
+  inputLocked: false,
+  inventoryOpen: false,
   playerHealth: null,       // Persisted across rooms. null = use max HP
   slimesByRoom: {},         // { roomName: [{ x, y, health }, ...] }
+  
+  // RPG Progression
+  player: {
+    level: 1,
+    xp: 0,
+    xpToNext: 100,
+    skillPoints: 0,
+    unlockedSkills: ["overheadSlash"],
+    activeSkills: ["overheadSlash", null, null, null], // 4-slot loadout
+  }
 };
+
+/**
+ * Add XP to player and handle leveling
+ * @param {number} amount - XP amount to add
+ */
+export function addXP(amount) {
+  const p = gameState.player;
+  p.xp += amount;
+  
+  if (p.xp >= p.xpToNext) {
+    p.level++;
+    p.xp -= p.xpToNext;
+    p.xpToNext = Math.round(p.xpToNext * 1.2);
+    p.skillPoints++;
+    console.log(`Leveled up to ${p.level}!`);
+  }
+}
 
 export function setGamePause(k, isPaused) {
   gameState.isPaused = isPaused;
+  gameState.inputLocked = isPaused;
 }

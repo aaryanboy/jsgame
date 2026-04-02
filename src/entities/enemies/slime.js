@@ -188,6 +188,7 @@ export function createSlime(k, pos, player) {
 
     // ── Death sequence ──
     slime.die = () => {
+        addXP(20); // Grant 20 XP on death
         slime.unuse("body");
         // Don't unuse 'area' as it crashes Kaboom collision checks mid-frame
         // Instead, tell Kaboom to ignore collisions with these tags

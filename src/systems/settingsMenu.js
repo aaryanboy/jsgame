@@ -670,10 +670,10 @@ function applyLiveStats(k, section, key, val) {
     });
   }
   if (section === "pet") {
-    k.get("frog").forEach(f => {
-      if (key === "health" && val < f.health) f.health = val;
-      if (key === "damage") f.damage = val;
-      if (key === "speed") f.speed = val;
+    k.get("pet").forEach(p => {
+      if (key === "health" && val < p.health) p.health = val;
+      if (key === "damage") p.damage = val;
+      if (key === "speed") p.speed = val;
     });
   }
   if (section === "slime") {

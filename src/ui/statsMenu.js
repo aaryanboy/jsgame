@@ -235,23 +235,29 @@ function drawXpBar(k, parent, L, S, sh) {
         k.pos(x, y), k.color(...C.xpBg),
         k.outline(Math.round(S), k.rgb(...C.xpBorder)),
     ]);
-    // Fill (0% placeholder — hook into XP system later)
-    parent.add([
+    // Fill
+    const xpFill = parent.add([
         k.polygon([
             k.vec2(skew, 1), k.vec2(skew, 1),
             k.vec2(0, h - 1), k.vec2(1, h - 1),
         ]),
-        k.pos(x, y), k.color(...C.xpFill), k.opacity(0),
+        k.pos(x, y), k.color(...C.xpFill),
     ]);
-    // Shine line
-    parent.add([
-        k.polygon([
-            k.vec2(skew + 1, 1), k.vec2(w - 2, 1),
-            k.vec2(w - 2, Math.max(1, Math.round(S * 1.5))),
-            k.vec2(skew, Math.max(1, Math.round(S * 1.5))),
-        ]),
-        k.pos(x, y), k.color(120, 190, 255), k.opacity(0.15),
-    ]);
+    
+    xpFill.onUpdate(() => {
+        const p = gameState.player;
+        const r = p.xp / p.xpToNext;
+        if (r > 0) {
+            xpFill.opacity = 1;
+            const fw = (w - 2) * r;
+            xpFill.pts = [
+                k.vec2(skew, 1),
+                k.vec2(skew + fw - skew * r, 1),
+                k.vec2(fw - skew * r, h - 1),
+                k.vec2(1, h - 1),
+            ];
+        } else { xpFill.opacity = 0; }
+    });
 }
 
 // ─────────────────────────────────────────────
@@ -330,66 +336,59 @@ function drawDiamond(k, parent, L, S, sh) {
 // ─────────────────────────────────────────────
 function drawSkillSlots(k, parent, L, S, sh) {
     const { cx, cy, small, slotOffset } = L.diamond;
-    const fontSize = L.font.bar;
+    
+    // Import SKILLS to get icons
+    import("../systems/progression.js").then(module => {
+        const SKILLS = module.SKILLS;
+        const activeSkills = gameState.player.activeSkills;
 
-    const equippedSkills = {
-        top: "slash", left: "comma", right: "period", bottom: "m"
-    };
+        const slotMap = {
+            top: 0,    // Slot 1
+            left: 1,   // Slot 2
+            right: 2,  // Slot 3
+            bottom: 3, // Slot 4
+        };
 
-    const timerKeys = { m: "mTimer", comma: "commaTimer", period: "periodTimer", slash: "slashTimer" };
-    const keyLabels = { m: "M", comma: ",", period: ".", slash: "/" };
+        const keyLabels = ["1", "2", "3", "4"];
 
-    const positions = {
-        top: k.vec2(0, -slotOffset),
-        left: k.vec2(-slotOffset, 0),
-        right: k.vec2(slotOffset, 0),
-        bottom: k.vec2(0, slotOffset),
-    };
+        Object.entries(slotMap).forEach(([side, slotIdx]) => {
+            const skillId = activeSkills[slotIdx];
+            const skill = SKILLS[skillId];
 
-    Object.entries(positions).forEach(([slotId, offset]) => {
-        const skillKey = equippedSkills[slotId];
-        const skillData = skills[skillKey];
-        if (!skillData) return;
+            const offset = {
+                top: k.vec2(0, -slotOffset),
+                left: k.vec2(-slotOffset, 0),
+                right: k.vec2(slotOffset, 0),
+                bottom: k.vec2(0, slotOffset),
+            }[side];
 
-        const slotX = cx + offset.x;
-        const slotY = cy + offset.y;
-        const accent = S_ACC[slotId];
+            const slotX = cx + offset.x;
+            const slotY = cy + offset.y;
+            const accent = S_ACC[side];
 
-        // Shadow
-        parent.add([k.rect(small, small), k.pos(slotX + 1, slotY + 2), k.anchor("center"), k.rotate(45), k.color(...P.shadowLight), k.opacity(0.55)]);
-        // Border glow
-        parent.add([k.rect(small + 2, small + 2), k.pos(slotX, slotY), k.anchor("center"), k.rotate(45), k.color(...accent), k.opacity(0.45)]);
-        // Body
-        parent.add([k.rect(small, small), k.pos(slotX, slotY), k.anchor("center"), k.rotate(45), k.color(...C.slotBody), k.outline(1, k.rgb(...accent))]);
-        // Skill color fill
-        parent.add([k.rect(small - Math.round(3 * S), small - Math.round(3 * S)), k.pos(slotX, slotY), k.anchor("center"), k.rotate(45), k.color(...skillData.iconColor), k.opacity(0.85)]);
-        // Highlight edge
-        parent.add([k.rect(small - Math.round(3 * S), Math.max(1, Math.round(S * 0.8))), k.pos(slotX, slotY - 1), k.anchor("center"), k.rotate(45), k.color(255, 255, 255), k.opacity(0.2)]);
-        // Key label (shadow + text)
-        const label = keyLabels[skillKey] || skillKey.toUpperCase();
-        parent.add([k.text(label, { size: Math.round(7 * S), font: "monospace", weight: "bold" }), k.pos(slotX + 1, slotY + 1), k.anchor("center"), k.color(...C.textDark)]);
-        parent.add([k.text(label, { size: Math.round(7 * S), font: "monospace", weight: "bold" }), k.pos(slotX, slotY), k.anchor("center"), k.color(...P.white)]);
+            // Shadow
+            parent.add([k.rect(small, small), k.pos(slotX + 1, slotY + 2), k.anchor("center"), k.rotate(45), k.color(...P.shadowLight), k.opacity(0.55)]);
+            // Border glow
+            parent.add([k.rect(small + 2, small + 2), k.pos(slotX, slotY), k.anchor("center"), k.rotate(45), k.color(...accent), k.opacity(0.45)]);
+            // Body
+            parent.add([k.rect(small, small), k.pos(slotX, slotY), k.anchor("center"), k.rotate(45), k.color(...C.slotBody), k.outline(1, k.rgb(...accent))]);
 
-        // Cooldown overlay + text
-        const cdOverlay = parent.add([k.rect(small - 2, small - 2), k.pos(slotX, slotY), k.anchor("center"), k.rotate(45), k.color(0, 0, 0), k.opacity(0)]);
-        const cdText = parent.add([k.text("", { size: Math.round(9 * S), font: "monospace", weight: "bold" }), k.pos(slotX, slotY), k.anchor("center"), k.color(240, 220, 50)]);
-        const timerKey = timerKeys[skillKey];
+            if (skill) {
+                // Skill Icon (using text for now since SKILLS has emoji icons)
+                parent.add([
+                    k.text(skill.icon, { size: Math.round(14 * S) }),
+                    k.pos(slotX, slotY),
+                    k.anchor("center"),
+                    k.fixed(),
+                    { z: Z.hudFront + 1 }
+                ]);
 
-        cdOverlay.onUpdate(() => {
-            const p = k.get("player")[0];
-            if (!p) return;
-
-            if (skillKey === "slash" && gameState.isTimeStopped) {
-                cdOverlay.opacity = 0.55;
-                cdText.text = "⏱";
-                cdText.color = k.rgb(147, 112, 219);
-            } else if (p[timerKey] > 0) {
-                cdOverlay.opacity = 0.65;
-                cdText.text = Math.ceil(p[timerKey]).toString();
-                cdText.color = k.rgb(240, 220, 50);
+                // Key label
+                const label = keyLabels[slotIdx];
+                parent.add([k.text(label, { size: Math.round(7 * S), font: "monospace", weight: "bold" }), k.pos(slotX + 13, slotY + 13), k.anchor("center"), k.color(...P.white)]);
             } else {
-                cdOverlay.opacity = 0;
-                cdText.text = "";
+                // Empty dot
+                parent.add([k.circle(3), k.pos(slotX, slotY), k.anchor("center"), k.color(...accent), k.opacity(0.4)]);
             }
         });
     });

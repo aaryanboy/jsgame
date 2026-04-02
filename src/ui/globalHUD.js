@@ -1,7 +1,7 @@
-import { toggleSettingsMenu } from "../systems/settingsMenu.js";
-import { revivePet } from "../entities/frog.js";
 import { THEME } from "../utils/theme.js";
 import { Z } from "../utils/constants.js";
+import { gameState } from "../utils/utils.js";
+import { toggleSettingsMenu } from "../systems/settingsMenu.js";
 
 let hudPlayer = null;
 
@@ -104,6 +104,94 @@ export function createGlobalHUD(k, player) {
     });
 
     // NOTE: Removed the global "T" (revive) button because it has been converted to an in-world interactable hold-progress bar.
+
+    const centerX = w / 2;
+
+    // --- XP BAR (Top Center) ---
+    const barW = 200;
+    const barH = 8;
+    const barX = centerX - barW / 2;
+    const barY = 20;
+
+    const xpBg = k.add([
+        k.rect(barW, barH, { radius: 4 }),
+        k.pos(barX, barY),
+        k.color(20, 20, 20),
+        k.outline(1, k.rgb(60, 60, 60)),
+        k.fixed(),
+        k.stay(["main", "map", "area", "boss"]),
+        { z: Z.hudBack },
+        "globalHUD"
+    ]);
+
+    const xpFill = k.add([
+        k.rect(0, barH, { radius: 4 }),
+        k.pos(barX, barY),
+        k.color(...THEME.brand.primary),
+        k.fixed(),
+        k.stay(["main", "map", "area", "boss"]),
+        { z: Z.hudFront },
+        "globalHUD"
+    ]);
+
+    const lvlText = k.add([
+        k.text(`LVL ${gameState.player.level}`, { size: 12, font: "monospace" }),
+        k.pos(centerX, barY + barH + 8),
+        k.anchor("center"),
+        k.color(255, 255, 255),
+        k.fixed(),
+        k.stay(["main", "map", "area", "boss"]),
+        { z: Z.hudFront },
+        "globalHUD"
+    ]);
+
+    k.onUpdate(() => {
+        const p = gameState.player;
+        const targetWidth = barW * (p.xp / p.xpToNext);
+        xpFill.width = k.lerp(xpFill.width, targetWidth, 0.1);
+        lvlText.text = `LVL ${p.level}`;
+    });
+
+    // --- SKILL MENU BUTTON (Top Right, next to Stats) ---
+    const skillBtnX = x - utilSize - 10;
+    const skillBtnBg = k.add([
+        k.circle(utilSize * 0.5),
+        k.pos(skillBtnX, y),
+        k.anchor("center"),
+        k.area(),
+        k.color(...THEME.palette.bg),
+        k.outline(2, k.rgb(...THEME.brand.primary)),
+        k.fixed(),
+        k.stay(["main", "map", "area", "boss"]),
+        { z: Z.hudFront },
+        "globalHUD"
+    ]);
+
+    const skillIcon = k.add([
+        k.text("💠", { size: Math.round(utilSize * 0.5) }),
+        k.pos(skillBtnX, y),
+        k.anchor("center"),
+        k.fixed(),
+        k.stay(["main", "map", "area", "boss"]),
+        { z: Z.hudFront + 1 },
+        "globalHUD"
+    ]);
+
+    skillBtnBg.onClick(() => {
+        import("./skillMenu.js").then(m => m.toggleSkillMenu(k, hudPlayer));
+    });
+
+    skillBtnBg.onHoverUpdate(() => {
+        document.body.style.cursor = "pointer";
+        skillIcon.scale = k.vec2(1.2);
+    });
+    skillBtnBg.onHoverEnd(() => {
+        document.body.style.cursor = "default";
+        skillIcon.scale = k.vec2(1);
+    });
+
+    // --- STATS MENU BUTTON (Existing) ---
+    // ... (rest of the stats button logic stays same)
 }
 
 export function hideGlobalHUD(k) {

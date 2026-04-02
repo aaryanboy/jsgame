@@ -62,6 +62,7 @@ export const gameConfig = {
     speed: 100,
   },
   pet: {
+    type: "cat", // "frog" or "cat"
     health: 500,
     speed: 200,
     damage: 5,
@@ -105,12 +106,13 @@ export const playerinfo = {
 
 
 export const petInfo = {
+  get type() { return gameConfig.pet.type; },
   get health() { return gameConfig.pet.health; },
   get speed() { return gameConfig.pet.speed; },
   get damage() { return gameConfig.pet.damage; },
   get critRate() { return gameConfig.pet.critRate; },
   get critDamage() { return gameConfig.pet.critDamage; },
-  name: "Froggy",
+  get name() { return gameConfig.pet.type === "frog" ? "Froggy" : "Kitty"; },
 };
 
 export const skills = {

@@ -84,6 +84,45 @@ export function loadAssets(k) {
         },
     });
 
+    // Cat pet spritesheet: 4x4 grid (down, up, left, right — 4 frames each)
+    k.loadSprite("cat", "/assets/pets/cat.png", {
+        sliceX: 4,
+        sliceY: 4,
+        anims: {
+            "idle-down": 0,
+            "walk-down": { from: 0, to: 3, loop: true, speed: 8 },
+            "idle-up": 4,
+            "walk-up": { from: 4, to: 7, loop: true, speed: 8 },
+            "idle-left": 8,
+            "walk-left": { from: 8, to: 11, loop: true, speed: 8 },
+            "idle-right": 12,
+            "walk-right": { from: 12, to: 15, loop: true, speed: 8 },
+        },
+    });
+
+    // Cat attack spritesheet: 2 columns, 12 rows
+    // Rows 1-4: Deepcut (Down, Up, Left, Right)
+    // Rows 5-8: Axe Shot (Down, Up, Left, Right)
+    // Rows 9-12: Heal (Down, Up, Left, Right)
+    k.loadSprite("cat-attack", "/assets/pets/catattack.png", {
+        sliceX: 2,
+        sliceY: 12,
+        anims: {
+            "deepcut-down": { from: 0, to: 1, loop: false, speed: 5 },
+            "deepcut-up": { from: 2, to: 3, loop: false, speed: 5 },
+            "deepcut-left": { from: 4, to: 5, loop: false, speed: 5 },
+            "deepcut-right": { from: 6, to: 7, loop: false, speed: 5 },
+            "axeshot-down": { from: 8, to: 9, loop: false, speed: 5 },
+            "axeshot-up": { from: 10, to: 11, loop: false, speed: 5 },
+            "axeshot-left": { from: 12, to: 13, loop: false, speed: 5 },
+            "axeshot-right": { from: 14, to: 15, loop: false, speed: 5 },
+            "heal-down": { from: 16, to: 17, loop: false, speed: 5 },
+            "heal-up": { from: 18, to: 19, loop: false, speed: 5 },
+            "heal-left": { from: 20, to: 21, loop: false, speed: 5 },
+            "heal-right": { from: 22, to: 23, loop: false, speed: 5 },
+        }
+    });
+
     k.loadSprite("mainroom", "./mainroom.png");
     k.loadSprite("maproom", "./map.png");
     k.loadSprite("maparea", "./maparea.png");

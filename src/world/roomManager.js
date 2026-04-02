@@ -1,8 +1,9 @@
 import { dialogueData, scaleFactor, gameConfig } from "../utils/constants.js";
 import { displayDialogue, setCamScale } from "../utils/utils.js";
 import { createPlayer, setPlayerControls } from "../entities/player.js";
-import { createFrog } from "../entities/frog.js";
-import { petState, spawnPetInNewRoom, checkPetTransition } from "../systems/persistentPet.js";
+import { createPet } from "../entities/pets/petFactory.js";
+import { petState, spawnPetInNewRoom, checkPetTransition, revivePet } from "../systems/persistentPet.js";
+import { petInfo } from "../utils/constants.js";
 
 import { resetTimeStop } from "../systems/timeStop.js";
 import { createEnemy, ENEMY_REGISTRY } from "../systems/enemyRegistry.js";
@@ -128,7 +129,7 @@ export function loadRoom(k, roomName) {
                     petState.currentPet = null;
 
                     setPlayerControls(k, player);
-                    spawnPetInNewRoom(k, player, createFrog);
+                    spawnPetInNewRoom(k, player);
                     // Damage box removed
 
                     // Restore saved slimes for this room
@@ -168,10 +169,10 @@ export function loadRoom(k, roomName) {
                         continue;
                     }
 
-                    // Pet / Frog companion
-                    if (entity.name === "pet" || entity.name === "frog") {
+                    // Pet / Frog / Cat companion
+                    if (entity.name === "pet" || entity.name === "frog" || entity.name === "cat") {
                         if (petState.shouldPersist) continue;
-                        const pet = createFrog(k, entityPos, player);
+                        const pet = createPet(k, petInfo.type, entityPos, player);
                         k.add(pet);
                         continue;
                     }

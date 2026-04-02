@@ -1,8 +1,8 @@
-import { scaleFactor, petInfo } from "../utils/constants.js";
-import { gameState } from "../utils/utils.js";
-import { getTimeScale } from "../systems/timeStop.js";
-import { petState } from "../systems/persistentPet.js";
-import { createEntityHealthBar } from "../ui/entityHealthBar.js";
+import { scaleFactor, petInfo } from "../../utils/constants.js";
+import { gameState } from "../../utils/utils.js";
+import { getTimeScale } from "../../systems/timeStop.js";
+import { petState } from "../../systems/persistentPet.js";
+import { createEntityHealthBar } from "../../ui/entityHealthBar.js";
 
 export function createFrog(k, pos, player, restoreHealth = false) {
     // Use stored health if restoring, otherwise use max
@@ -29,6 +29,7 @@ export function createFrog(k, pos, player, restoreHealth = false) {
             attackTimer: 0,
         },
         "frog",
+        "pet",
     ]);
 
     // Store references for revive
@@ -103,7 +104,7 @@ export function createFrog(k, pos, player, restoreHealth = false) {
 
         const timeScale = getTimeScale();
 
-        // COMBAT LOGIC: Search for any enemy (boss, slime, skeleton, etc.)
+        // COMBAT LOGIC: Search for any enemy
         const enemies = k.get("enemy");
         let targetEnemy = null;
         for (const enemy of enemies) {
@@ -172,13 +173,9 @@ export function createFrog(k, pos, player, restoreHealth = false) {
 
     // Collision/Combat Logic
     frog.onCollide("attack", (attack) => {
-        // Frog takes flat damage from attacks (no crit amplification against self)
         const damageDealt = Math.floor(attack.damage);
         frog.health -= damageDealt;
 
-        // damageBox removed
-
-        // Game feel: subtle shake + hit flash
         k.shake(2);
         frog.color = k.rgb(255, 100, 100);
         k.wait(0.1, () => {
@@ -186,7 +183,6 @@ export function createFrog(k, pos, player, restoreHealth = false) {
         });
 
         if (frog.health <= 0) {
-            // Track death position and state
             petState.lastDeathPos = frog.pos.clone();
             petState.isDead = true;
             petState.currentPet = null;
@@ -196,38 +192,3 @@ export function createFrog(k, pos, player, restoreHealth = false) {
 
     return frog;
 }
-
-/**
- * Revive the pet at the player's position
- * @returns {boolean} Whether the pet was successfully revived
- */
-export function revivePet() {
-    if (!petState.kaboom || !petState.player) {
-        return false;
-    }
-
-    const k = petState.kaboom;
-    const player = petState.player;
-
-    // If the pet is already alive and in this room, don't do anything
-    if (petState.currentPet && !petState.isDead) {
-        return false;
-    }
-
-    // If there's an existing pet instance (e.g. it was dead in this room), destroy it before re-spawning
-    if (petState.currentPet) {
-        k.destroy(petState.currentPet);
-    }
-
-    // Reset state to ensure it spawns and persists
-    petState.isDead = false;
-    petState.shouldPersist = true;
-
-    // Spawn pet near the player
-    const spawnPos = player.pos.add(k.vec2(30, 0));
-    const newPet = createFrog(k, spawnPos, player);
-    k.add(newPet);
-
-    return true;
-}
-
