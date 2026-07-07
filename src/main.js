@@ -60,4 +60,5 @@ k.scene("gameover", () => {
     };
     k.onKeyPress("enter", retry);
     k.onClick(retry);
+    
 });
